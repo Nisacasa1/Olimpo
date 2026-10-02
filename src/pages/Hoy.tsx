@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ArrowRight, CalendarClock, Flame, PhoneCall, Stethoscope, Video } from 'lucide-react'
+import { ArrowRight, Brain, CalendarClock, Check as CheckIcon, Flame, Moon, PhoneCall, Stethoscope, Sun, Video } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { rangoDe } from '../components/Periodo'
@@ -11,6 +11,7 @@ import { diaLocal, fmt, hoyISO } from '../lib/format'
 import { embudoLlamadas, evaluarU } from '../lib/metricas'
 import { useAjustes, useTabla } from '../lib/store'
 import { useResumen } from '../lib/useResumen'
+import { indiceDelDia, lecturaCompleta, useSemana2 } from '../lib/semana2'
 
 export default function Hoy() {
   const llamadas = useTabla('llamadas')
@@ -110,6 +111,8 @@ export default function Hoy() {
         </Card>
       </div>
 
+      <RitualHoy />
+
       {/* Big 4 */}
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi etiqueta="ABR · 30 días" valor={fmt.pct(e30.abr, 2)} tono={evaluarU(e30.abr, U.abr, e30.marcadas)} muestra={{ n: e30.marcadas, requerida: U.abr.muestra }} sub="mín 1% · meta 5%" />
@@ -173,5 +176,58 @@ export default function Hoy() {
         </Card>
       </div>
     </Pagina>
+  )
+}
+
+/** La Semana 2 en la pantalla de Hoy: principio del día, lectura mañana/noche y racha. */
+function RitualHoy() {
+  const s = useSemana2()
+  const dias = useTabla('dias')
+  const hoy = hoyISO()
+  const r = dias.find((d) => d.fecha === hoy)?.ritual ?? {}
+  const racha = useMemo(() => {
+    const m = new Map(dias.map((d) => [d.fecha, d.ritual]))
+    let n = 0
+    const d = new Date()
+    if (!lecturaCompleta(m.get(hoy))) d.setDate(d.getDate() - 1)
+    for (let i = 0; i < 730; i++) {
+      if (!lecturaCompleta(m.get(format(d, 'yyyy-MM-dd')))) break
+      n++
+      d.setDate(d.getDate() - 1)
+    }
+    return n
+  }, [dias, hoy])
+  if (!s.doctrina) return null
+  const p = s.doctrina.principios[indiceDelDia(s.doctrina.principios.length)]
+  const mandatos = s.doctrina.mandatos.filter((m) => m.n !== 10 && r[`m${m.n}`]).length
+  return (
+    <Link to="/mentalidad" className="mt-5 block">
+      <Card className="flex flex-wrap items-center gap-5 p-5 transition hover:border-line-2">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-violet/15 text-violet">
+          <Brain size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-semibold tracking-[0.14em] text-muted uppercase">Principio del día · {p.modulo}</div>
+          <div className="truncate font-serif text-xl">{p.titulo}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {[
+            ['lectura_am', 'Mañana', <Sun key="s" size={14} />],
+            ['lectura_pm', 'Noche', <Moon key="m" size={14} />],
+          ].map(([k, t, i]) => (
+            <span key={k as string} className={cx('flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', r[k as string] ? 'bg-green-soft text-green' : 'bg-surface-2 text-muted')}>
+              {r[k as string] ? <CheckIcon size={13} /> : i}
+              {t}
+            </span>
+          ))}
+          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-muted">{mandatos}/9 mandatos</span>
+          {racha > 0 && (
+            <span className="flex items-center gap-1 rounded-full bg-amber-soft px-2.5 py-1 text-xs font-semibold text-amber">
+              <Flame size={13} /> {racha}
+            </span>
+          )}
+        </div>
+      </Card>
+    </Link>
   )
 }

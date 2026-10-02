@@ -8,6 +8,7 @@ import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 const Hoy = lazy(() => import('./pages/Hoy'))
 const Llamar = lazy(() => import('./pages/Llamar'))
+const Mentalidad = lazy(() => import('./pages/Mentalidad'))
 const Prospectos = lazy(() => import('./pages/Prospectos'))
 const Outreach = lazy(() => import('./pages/Outreach'))
 const Ventas = lazy(() => import('./pages/Ventas'))
@@ -50,6 +51,7 @@ function Aplicacion() {
         <Routes>
           <Route path="/" element={<Hoy />} />
           <Route path="/llamar" element={<Llamar />} />
+          <Route path="/mentalidad" element={<Mentalidad />} />
           <Route path="/prospectos" element={<Prospectos />} />
           <Route path="/outreach" element={<Outreach />} />
           <Route path="/ventas" element={<Ventas />} />

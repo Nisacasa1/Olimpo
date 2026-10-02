@@ -25,3 +25,7 @@ dist-ssr
 
 .env
 .env.local
+
+# Contenido privado: doctrina de Imperium y datos personales. Nunca al repo ni al deploy.
+privado/
+public/privado/

@@ -7,6 +7,7 @@ import {
   HardDrive,
   LayoutGrid,
   Megaphone,
+  Brain,
   Moon,
   Phone,
   PhoneCall,
@@ -30,6 +31,7 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
     grupo: 'Operar',
     items: [
       { a: '/', nombre: 'Hoy', icono: <LayoutGrid size={17} /> },
+      { a: '/mentalidad', nombre: 'Mentalidad', icono: <Brain size={17} /> },
       { a: '/llamar', nombre: 'Llamar', icono: <PhoneCall size={17} /> },
       { a: '/prospectos', nombre: 'Prospectos', icono: <Users size={17} /> },
       { a: '/ventas', nombre: 'Ventas', icono: <Handshake size={17} /> },

@@ -173,6 +173,28 @@ export interface Dia extends Row {
   entrevistas: number
   energia: number | null // 1-5
   nota: string
+  ritual: Record<string, boolean> | null // checklist del ritual y los 10 mandatos (Semana 2)
+}
+
+// ── Mentalidad (Semana 2) ──────────────────────────────────────────────
+
+/** Movimiento del Banco de Sufrimiento (2.5): enfrentar +1, evitar −2. */
+export interface MovBanco extends Row {
+  fecha: string
+  tipo: 'enfrente' | 'evite'
+  texto: string
+  forma: string // forma de resistencia (clave en inglés del catálogo de 30)
+}
+
+/** Contenido privado de solo lectura: la doctrina de la Semana 2 y las imágenes del documento. */
+export interface Contenido extends Row {
+  datos: unknown
+}
+
+/** Lo editable de la Semana 2: el documento y el estado de cada ejercicio. */
+export interface Mentalidad extends Row {
+  tipo: 'documento' | 'ejercicio' | 'revision'
+  datos: Record<string, unknown>
 }
 
 // ── Bóveda ─────────────────────────────────────────────────────────────
@@ -231,6 +253,9 @@ export interface Tablas {
   boveda: EntradaBoveda
   candidatos: Candidato
   ajustes: Ajustes
+  banco: MovBanco
+  contenido: Contenido
+  mentalidad: Mentalidad
 }
 
 export type Tabla = keyof Tablas
@@ -248,4 +273,7 @@ export const TABLAS: Tabla[] = [
   'boveda',
   'candidatos',
   'ajustes',
+  'banco',
+  'contenido',
+  'mentalidad',
 ]

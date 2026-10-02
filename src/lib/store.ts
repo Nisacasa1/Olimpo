@@ -40,6 +40,9 @@ function leerLocal<T extends Tabla>(t: T): Tablas[T][] {
 }
 
 function guardarLocal(t: Tabla) {
+  // El contenido privado (doctrina e imágenes) no se guarda en el navegador:
+  // en modo local se vuelve a leer de public/privado/ en cada arranque.
+  if (t === 'contenido') return
   try {
     localStorage.setItem(clave(t), JSON.stringify(cache[t]))
   } catch (e) {

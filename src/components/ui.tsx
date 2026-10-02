@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import type { Tono } from '../lib/metricas'
 import { useAvisos } from '../lib/store'
@@ -247,7 +248,9 @@ export function Modal({ abierto, onCerrar, titulo, children, ancho = 'max-w-lg',
     }
   }, [abierto, onCerrar])
   if (!abierto) return null
-  return (
+  // Portal al body: la animación de entrada de la página crea un contenedor que
+  // atraparía al elemento fijo y lo desplazaría con el scroll.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-6" onMouseDown={onCerrar}>
       <div
         className={cx('rise flex max-h-[92vh] w-full flex-col rounded-t-3xl border border-line-2 bg-surface shadow-2xl md:rounded-3xl', ancho)}
@@ -262,7 +265,8 @@ export function Modal({ abierto, onCerrar, titulo, children, ancho = 'max-w-lg',
         <div className="overflow-y-auto px-5 py-4">{children}</div>
         {pie && <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{pie}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

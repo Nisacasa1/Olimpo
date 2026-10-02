@@ -159,7 +159,36 @@ create table if not exists dias (
   contenido boolean default false,
   entrevistas integer default 0,
   energia integer,
-  nota text default ''
+  nota text default '',
+  ritual jsonb default '{}'::jsonb
+);
+alter table dias add column if not exists ritual jsonb default '{}'::jsonb;
+
+-- Semana 2 · mentalidad
+create table if not exists banco (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  fecha date not null,
+  tipo text not null,            -- 'enfrente' (+1) | 'evite' (−2)
+  texto text default '',
+  forma text default ''
+);
+
+-- Contenido privado (doctrina de la Semana 2 e imágenes del documento). Nunca va en el código.
+create table if not exists contenido (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  datos jsonb not null
+);
+
+create table if not exists mentalidad (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  tipo text not null,
+  datos jsonb not null default '{}'::jsonb
 );
 
 create table if not exists boveda (
@@ -209,7 +238,7 @@ create table if not exists ajustes (
 do $$
 declare t text;
 begin
-  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes']
+  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes','banco','contenido','mentalidad']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "dueno" on %I', t);

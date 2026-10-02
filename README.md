@@ -4,7 +4,8 @@ La app de métricas de Imperium Academy para **Olimpo Acquisition**. Reemplaza l
 
 | Pantalla | Reemplaza a |
 |---|---|
-| **Hoy** | — el tablero del día: outreach, callbacks, citas, Big 4 y cuello de botella |
+| **Hoy** | — el tablero del día: outreach, callbacks, citas, Big 4, cuello de botella y el ritual |
+| **Mentalidad** | toda la Semana 2: ritual diario, los 10 mandatos, el Banco de Sufrimiento, tu Self Transcendence Doc, los 8 módulos, los ejercicios y las 30 formas de resistencia |
 | **Llamar** | la hoja de Leads (cola con la regla de 3 intentos y los 7 resultados) |
 | **Prospectos** | Cold Calling Leads · Example CRM · 100 Dial Challenge · importa tus Excel de leads |
 | **Ventas** | Sales Performance Tracker · No Show & Bad Calls |
@@ -37,6 +38,16 @@ Sin configurar nada, la app arranca en **modo local**: los datos viven en el nav
 6. Entra con tu correo: te llega un enlace y quedas adentro. Si tenías datos en modo local, en **Ajustes** aparece el botón para subirlos.
 
 > La clave *anon* es pública por diseño (va dentro de la app); lo que protege los datos es el Row Level Security del esquema. **Nunca pongas la clave `service_role` en el `.env`.**
+
+## La Semana 2 es contenido privado
+
+El material de Imperium y tu documento **no viven en el código** (el código de una app publicada se puede descargar). Se generan en un archivo local que nunca va a git ni al deploy:
+
+```bash
+python scripts/generar-semana-2.py
+```
+
+Lee `privado/doctrina-semana-2.json` (los resúmenes de los módulos), tu PDF del Self Transcendence Doc y tus respuestas de `imperium/raw/`, y escribe `public/privado/semana-2.json`. La app lo carga sola: en modo local lo lee en cada arranque, y en la nube lo guarda una vez en tu base. Si un día actualizas el PDF, borra en Supabase las filas de `contenido` y `mentalidad` con id `documento` y vuelve a correr el script.
 
 ## Lo que viene
 
