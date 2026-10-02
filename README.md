@@ -1,4 +1,4 @@
-# Imperium OS
+# Olimpo
 
 La app de métricas de Imperium Academy para **Olimpo Acquisition**. Reemplaza las 18 hojas de Excel del programa con una sola app: se registra cada cosa una vez y todas las tasas, los Big 4 y el cuello de botella se calculan solos.
 

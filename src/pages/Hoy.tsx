@@ -61,7 +61,7 @@ export default function Hoy() {
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         {/* Outreach de hoy */}
         <Card className="relative overflow-hidden p-6">
-          <div className="absolute -top-20 -right-16 size-64 rounded-full bg-blue/10 blur-3xl" />
+          <div className="absolute -top-20 -right-16 size-64 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="relative">
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">Outreach de hoy</div>

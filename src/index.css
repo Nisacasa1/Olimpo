@@ -2,50 +2,53 @@
 
 /* ── Tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg: #07090f;
-  --bg-2: #0b0e17;
-  --surface: #0f1320;
-  --surface-2: #151a2a;
+  /* Olimpo · negro y grises, plata como único acento, dorado apagado para destacar. */
+  --bg: #0a0a0a;
+  --bg-2: #0e0e0e;
+  --surface: #121212;
+  --surface-2: #1a1a1a;
   --line: rgba(255, 255, 255, 0.07);
-  --line-2: rgba(255, 255, 255, 0.12);
-  --text: #e8eaf1;
-  --muted: #8b91a5;
-  --faint: #5b6175;
-  --blue: #3b6cf6;
-  --blue-2: #5b84ff;
-  --blue-soft: rgba(59, 108, 246, 0.14);
-  --green: #22c55e;
-  --green-soft: rgba(34, 197, 94, 0.13);
-  --amber: #f5a524;
-  --amber-soft: rgba(245, 165, 36, 0.14);
-  --red: #f04444;
-  --red-soft: rgba(240, 68, 68, 0.13);
-  --violet: #a78bfa;
-  --shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+  --line-2: rgba(255, 255, 255, 0.13);
+  --text: #ededed;
+  --muted: #8e8e8e;
+  --faint: #5a5a5a;
+  --blue: #e4e4e4; /* acento: plata */
+  --blue-2: #ffffff;
+  --blue-soft: rgba(255, 255, 255, 0.06);
+  --on-accent: #0a0a0a;
+  --green: #3fb27f;
+  --green-soft: rgba(63, 178, 127, 0.12);
+  --amber: #d99a3e;
+  --amber-soft: rgba(217, 154, 62, 0.12);
+  --red: #e5484d;
+  --red-soft: rgba(229, 72, 77, 0.12);
+  --violet: #b9a27a; /* dorado apagado */
+  --shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
   color-scheme: dark;
 }
 
 :root[data-theme="light"] {
-  --bg: #f5f6fa;
-  --bg-2: #eef0f6;
+  --bg: #f6f6f6;
+  --bg-2: #efefef;
   --surface: #ffffff;
-  --surface-2: #f4f6fb;
-  --line: rgba(11, 15, 25, 0.08);
-  --line-2: rgba(11, 15, 25, 0.14);
-  --text: #0b0f19;
-  --muted: #5d6478;
-  --faint: #8b91a5;
-  --blue: #1d4ed8;
-  --blue-2: #2f5fe8;
-  --blue-soft: rgba(29, 78, 216, 0.09);
-  --green: #16a34a;
-  --green-soft: rgba(22, 163, 74, 0.1);
-  --amber: #c27c0e;
-  --amber-soft: rgba(194, 124, 14, 0.12);
-  --red: #dc2626;
-  --red-soft: rgba(220, 38, 38, 0.09);
-  --violet: #7c3aed;
-  --shadow: 0 24px 48px -28px rgba(11, 15, 25, 0.25);
+  --surface-2: #f3f3f3;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-2: rgba(0, 0, 0, 0.14);
+  --text: #0a0a0a;
+  --muted: #5f5f5f;
+  --faint: #9a9a9a;
+  --blue: #111111;
+  --blue-2: #000000;
+  --blue-soft: rgba(0, 0, 0, 0.05);
+  --on-accent: #ffffff;
+  --green: #1f8a5b;
+  --green-soft: rgba(31, 138, 91, 0.1);
+  --amber: #b5741a;
+  --amber-soft: rgba(181, 116, 26, 0.11);
+  --red: #c9363b;
+  --red-soft: rgba(201, 54, 59, 0.09);
+  --violet: #8a7247;
+  --shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.25);
   color-scheme: light;
 }
 
@@ -62,6 +65,7 @@
   --color-blue: var(--blue);
   --color-blue-2: var(--blue-2);
   --color-blue-soft: var(--blue-soft);
+  --color-on-accent: var(--on-accent);
   --color-green: var(--green);
   --color-green-soft: var(--green-soft);
   --color-amber: var(--amber);
@@ -93,9 +97,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(900px 500px at 85% -10%, var(--blue-soft), transparent 60%),
-    radial-gradient(700px 400px at -10% 110%, rgba(167, 139, 250, 0.06), transparent 60%);
+  background: radial-gradient(1000px 520px at 80% -15%, var(--blue-soft), transparent 60%);
   z-index: 0;
 }
 #root {
@@ -105,15 +107,28 @@ body::before {
 
 ::selection {
   background: var(--blue);
-  color: white;
+  color: var(--on-accent);
 }
 
-input,
-select,
-textarea,
-button {
-  font: inherit;
-  color: inherit;
+/* El logo cambia con el tema */
+.logo-claro {
+  display: none;
+}
+:root[data-theme="light"] .logo-claro {
+  display: block;
+}
+:root[data-theme="light"] .logo-oscuro {
+  display: none;
+}
+
+@layer base {
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 input[type="number"]::-webkit-inner-spin-button,

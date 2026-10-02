@@ -140,7 +140,7 @@ export function Btn({ variante = 'secundario', className, children, chico, ...p 
       className={cx(
         'pop inline-flex items-center justify-center gap-1.5 rounded-xl font-semibold transition disabled:cursor-not-allowed disabled:opacity-40',
         chico ? 'h-8 px-3 text-xs' : 'h-10 px-4 text-sm',
-        variante === 'primario' && 'bg-blue text-white shadow-[0_10px_30px_-12px_var(--blue)] hover:bg-blue-2',
+        variante === 'primario' && 'bg-blue text-on-accent shadow-[0_12px_30px_-16px_rgba(0,0,0,0.9)] hover:bg-blue-2',
         variante === 'secundario' && 'border border-line-2 bg-surface-2 text-text hover:border-faint',
         variante === 'fantasma' && 'text-muted hover:bg-surface-2 hover:text-text',
         variante === 'peligro' && 'border border-red/30 bg-red-soft text-red hover:bg-red/20',
@@ -201,7 +201,7 @@ export function Check({ checked, onChange, children }: { checked: boolean; onCha
       onClick={() => onChange(!checked)}
       className={cx('pop inline-flex items-center gap-2 text-sm', checked ? 'text-text' : 'text-muted')}
     >
-      <span className={cx('grid size-5 place-items-center rounded-md border transition', checked ? 'border-blue bg-blue text-white' : 'border-line-2 bg-bg-2')}>
+      <span className={cx('grid size-5 place-items-center rounded-md border transition', checked ? 'border-blue bg-blue text-on-accent' : 'border-line-2 bg-bg-2')}>
         {checked && (
           <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="3.5">
             <path d="m5 12 5 5L20 7" />
@@ -323,5 +323,15 @@ export function Barra({ valor, max, color = 'var(--blue)', className }: { valor:
     <div className={cx('h-2 overflow-hidden rounded-full bg-surface-2', className)}>
       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${p * 100}%`, background: color }} />
     </div>
+  )
+}
+
+/** El logo de Olimpo: blanco en el tema oscuro, negro en el claro. */
+export function Logo({ className = 'h-9' }: { className?: string }) {
+  return (
+    <>
+      <img src="/logo-blanco.png" alt="Olimpo" className={cx('logo-oscuro w-auto', className)} />
+      <img src="/logo-negro.png" alt="Olimpo" className={cx('logo-claro w-auto', className)} />
+    </>
   )
 }

@@ -1,6 +1,5 @@
-import { Activity } from 'lucide-react'
 import { useState } from 'react'
-import { Btn, Card, Input } from '../components/ui'
+import { Btn, Card, Input, Logo } from '../components/ui'
 import { supabase } from '../lib/supabase'
 
 export default function Login() {
@@ -23,10 +22,8 @@ export default function Login() {
     <div className="grid min-h-screen place-items-center px-4">
       <Card className="rise w-full max-w-sm p-7">
         <div className="mb-6 flex items-center gap-2.5">
-          <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-blue to-violet text-white">
-            <Activity size={20} strokeWidth={2.5} />
-          </div>
-          <div className="font-serif text-2xl">Imperium OS</div>
+          <Logo className="h-11" />
+          <div className="font-serif text-3xl">Olimpo</div>
         </div>
         {enviado ? (
           <p className="text-sm text-muted">

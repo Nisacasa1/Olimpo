@@ -1,5 +1,4 @@
 import {
-  Activity,
   BookOpen,
   Calculator,
   Clock,
@@ -23,8 +22,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { backend, useAjustes } from '../lib/store'
-import { cx, Modal } from './ui'
+import { backend } from '../lib/store'
+import { cx, Logo, Modal } from './ui'
 
 export const NAV: { grupo: string; items: { a: string; nombre: string; icono: ReactNode }[] }[] = [
   {
@@ -87,7 +86,6 @@ function useTema() {
 
 export function Layout({ children }: { children: ReactNode }) {
   const [tema, setTema] = useTema()
-  const ajustes = useAjustes()
   const [mas, setMas] = useState(false)
   const loc = useLocation()
   useEffect(() => setMas(false), [loc.pathname])
@@ -100,7 +98,7 @@ export function Layout({ children }: { children: ReactNode }) {
       className={({ isActive }) =>
         cx(
           'group flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium transition',
-          isActive ? 'bg-blue-soft text-text ring-1 ring-blue/25' : 'text-muted hover:bg-surface-2 hover:text-text',
+          isActive ? 'bg-blue-soft text-text ring-1 ring-line-2' : 'text-muted hover:bg-surface-2 hover:text-text',
         )
       }
     >
@@ -118,12 +116,10 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Barra lateral */}
       <aside className="sticky top-0 hidden h-screen w-[244px] shrink-0 flex-col border-r border-line bg-bg/60 px-3 py-5 backdrop-blur md:flex">
         <div className="mb-6 flex items-center gap-2.5 px-2">
-          <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue to-violet text-white shadow-lg">
-            <Activity size={18} strokeWidth={2.5} />
-          </div>
+          <Logo className="h-9" />
           <div className="leading-tight">
-            <div className="font-serif text-xl tracking-tight">Imperium OS</div>
-            <div className="text-[11px] text-faint">{ajustes.agencia}</div>
+            <div className="font-serif text-2xl tracking-tight">Olimpo</div>
+            <div className="text-[10px] font-semibold tracking-[0.22em] text-faint uppercase">Acquisition</div>
           </div>
         </div>
         <nav className="flex-1 space-y-5 overflow-y-auto">
@@ -170,7 +166,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
-      <Modal abierto={mas} onCerrar={() => setMas(false)} titulo="Imperium OS">
+      <Modal abierto={mas} onCerrar={() => setMas(false)} titulo="Olimpo">
         <div className="space-y-5 pb-2">
           {NAV.map((g) => (
             <div key={g.grupo}>

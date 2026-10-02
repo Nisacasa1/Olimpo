@@ -1,4 +1,4 @@
-// Modelo de datos de Imperium OS.
+// Modelo de datos de Olimpo.
 // Cada tipo es una tabla. Los nombres de campo son snake_case para que
 // coincidan 1:1 con las columnas de Supabase (supabase/schema.sql).
 
