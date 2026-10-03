@@ -1,7 +1,8 @@
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Check as CheckIcon, Pause, Play, Plus, Square, Star, Trash2, Wind, X } from 'lucide-react'
+import { Check as CheckIcon, Expand, Pause, Play, Plus, Square, Star, Trash2, Wind, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { FocoPantalla } from '../components/FocoPantalla'
 import { Area, Btn, Card, CardHead, cx, Input, Kpi, Modal, Num, Pagina, Segmento } from '../components/ui'
 import { campana, MOTIVOS, mmss, reloj, trabajadoMs, useReloj, useTic, type TipoTrabajo } from '../lib/foco'
 import { fmt, hoyISO } from '../lib/format'
@@ -39,6 +40,8 @@ function Temporizador() {
   const [terminar, setTerminar] = useState(false)
   const [respirar, setRespirar] = useState(false)
   const [opciones, setOpciones] = useState(false)
+  // La sesión arranca a pantalla completa; minimizarla no para el reloj
+  const [inmersivo, setInmersivo] = useState(true)
   const deHoy = prioridades.filter((p) => p.fecha === hoyISO() && !p.hecha).sort((a, b) => a.orden - b.orden)
 
   // Al llegar al objetivo: suena una vez y sigue contando (el objetivo es una meta, no una guillotina)
@@ -101,13 +104,21 @@ function Temporizador() {
               </Btn>
             </div>
           )}
-          <Btn variante="primario" className="h-14 w-full text-base" onClick={() => reloj.empezar()} disabled={!r.tarea.trim()}>
+          <Btn variante="primario" className="h-14 w-full text-base" onClick={() => {
+              setInmersivo(true)
+              reloj.empezar()
+            }} disabled={!r.tarea.trim()}>
             <Play size={18} /> Empezar
           </Btn>
         </div>
       ) : (
         <div className="flex flex-col items-center">
-          <div className="mb-2 max-w-full truncate text-center text-sm text-muted">{r.tarea}</div>
+          <div className="mb-2 flex w-full items-center justify-between gap-3">
+            <div className="min-w-0 truncate text-sm text-muted">{r.tarea}</div>
+            <Btn chico variante="fantasma" onClick={() => setInmersivo(true)}>
+              <Expand size={13} /> Pantalla completa
+            </Btn>
+          </div>
           <div className="relative grid place-items-center">
             <svg width="260" height="260" viewBox="0 0 260 260" className="-rotate-90">
               <circle cx="130" cy="130" r={R} fill="none" stroke="var(--surface-2)" strokeWidth="10" />
@@ -166,6 +177,7 @@ function Temporizador() {
           {r.interrupciones.length > 0 && <div className="mt-3 text-[11px] text-faint">{r.interrupciones.length} interrupciones en esta sesión</div>}
         </div>
       )}
+      {r.activo && inmersivo && <FocoPantalla onTerminar={() => setTerminar(true)} onMinimizar={() => setInmersivo(false)} bloqueado={terminar} />}
       {terminar && <Terminar onCerrar={() => setTerminar(false)} />}
       {respirar && <Respirar onCerrar={() => setRespirar(false)} />}
     </Card>

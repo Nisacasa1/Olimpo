@@ -177,3 +177,94 @@ input[type="number"] {
 .pop:active {
   animation: pop 0.18s ease;
 }
+
+/* ── Foco a pantalla completa ─────────────────────────────────────────
+   Siempre negro, sea cual sea el tema: es un cuarto oscuro con un reloj.
+   Todo se mueve lento: el halo respira cada 9 s y el anillo cada 4,5 s. */
+.foco-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(1100px, 140vw);
+  height: min(1100px, 140vw);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.92);
+  background: radial-gradient(circle, rgba(228, 228, 228, 0.075) 0%, rgba(228, 228, 228, 0.025) 38%, rgba(228, 228, 228, 0) 66%);
+  opacity: 0.5;
+  transition: opacity 1.2s ease, background 1.2s ease;
+}
+.foco-vivo .foco-halo {
+  opacity: 1;
+  animation: foco-halo 9s ease-in-out infinite;
+}
+.foco-pasado .foco-halo {
+  background: radial-gradient(circle, rgba(185, 162, 122, 0.11) 0%, rgba(185, 162, 122, 0.035) 38%, rgba(185, 162, 122, 0) 66%);
+}
+.foco-distraido .foco-halo {
+  background: radial-gradient(circle, rgba(229, 72, 77, 0.08) 0%, rgba(229, 72, 77, 0.02) 38%, rgba(229, 72, 77, 0) 66%);
+}
+@keyframes foco-halo {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 1;
+  }
+}
+.foco-vivo .foco-anillo {
+  animation: foco-respira 4.5s ease-in-out infinite;
+}
+@keyframes foco-respira {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018);
+  }
+}
+.foco-arco {
+  transition: stroke-dashoffset 1s linear, stroke 0.6s ease;
+}
+.foco-vivo .foco-arco {
+  filter: drop-shadow(0 0 7px rgba(228, 228, 228, 0.35));
+}
+.foco-latido {
+  animation: foco-latido 2.2s ease-in-out infinite;
+}
+@keyframes foco-latido {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+.foco-entra {
+  animation: foco-entra 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes foco-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .foco-vivo .foco-halo,
+  .foco-vivo .foco-anillo,
+  .foco-latido,
+  .foco-entra {
+    animation: none;
+  }
+}
