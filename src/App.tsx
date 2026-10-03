@@ -4,7 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { Layout } from './components/Layout'
 import { Avisos } from './components/ui'
 import { Captura } from './components/Captura'
-import { cargar, useEstado } from './lib/store'
+import { cargar, refrescar, useEstado } from './lib/store'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 const Hoy = lazy(() => import('./pages/Hoy'))
@@ -43,6 +43,20 @@ function Aplicacion() {
   const { listo, error } = useEstado()
   useEffect(() => {
     void cargar()
+  }, [])
+  // Lo que se escribe en otro equipo llega al volver a la app, y cada minuto si sigue abierta
+  useEffect(() => {
+    const alVolver = () => document.visibilityState === 'visible' && void refrescar()
+    document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener('focus', alVolver)
+    window.addEventListener('online', alVolver)
+    const t = setInterval(() => document.visibilityState === 'visible' && void refrescar(true), 60_000)
+    return () => {
+      document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener('focus', alVolver)
+      window.removeEventListener('online', alVolver)
+      clearInterval(t)
+    }
   }, [])
   if (!listo) return <Cargando />
   return (

@@ -24,10 +24,12 @@ import {
   Clapperboard,
   Map as MapIcon,
   CalendarCheck,
+  RefreshCw,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { backend } from '../lib/store'
+import { avisar, backend, refrescar } from '../lib/store'
+import { supabase } from '../lib/supabase'
 import { cx, Logo, Modal } from './ui'
 
 export const NAV: { grupo: string; items: { a: string; nombre: string; icono: ReactNode }[] }[] = [
@@ -104,8 +106,37 @@ function useTema() {
   return [tema, setTema] as const
 }
 
+/** La cuenta con la que entraste: si el PC y el celular no coinciden, no van a ver lo mismo. */
+function useCuenta() {
+  const [correo, setCorreo] = useState<string | null>(null)
+  useEffect(() => {
+    void supabase?.auth.getUser().then(({ data }) => setCorreo(data.user?.email ?? null))
+  }, [])
+  return correo
+}
+
+function Sincronizar() {
+  const [girando, setGirando] = useState(false)
+  return (
+    <button
+      onClick={async () => {
+        setGirando(true)
+        await refrescar(true)
+        setGirando(false)
+        avisar('Sincronizado con la nube', 'ok')
+      }}
+      className="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-text"
+      aria-label="Sincronizar ahora"
+      title="Traer lo último de la nube"
+    >
+      <RefreshCw size={15} className={cx(girando && 'animate-spin')} />
+    </button>
+  )
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const [tema, setTema] = useTema()
+  const correo = useCuenta()
   const [mas, setMas] = useState(false)
   const loc = useLocation()
   useEffect(() => setMas(false), [loc.pathname])
@@ -159,11 +190,15 @@ export function Layout({ children }: { children: ReactNode }) {
             ),
           )}
         </nav>
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-line px-2 pt-4">
-          <div className="flex items-center gap-1.5 text-[11px] text-faint" title={backend === 'local' ? 'Los datos viven en este navegador' : 'Los datos viven en la nube'}>
-            {backend === 'local' ? <HardDrive size={13} /> : <Cloud size={13} className="text-green" />}
-            {backend === 'local' ? 'Modo local' : 'En la nube'}
+        <div className="mt-4 flex items-center justify-between gap-1 border-t border-line px-2 pt-4">
+          <div className="min-w-0 text-[11px] text-faint" title={backend === 'local' ? 'Los datos viven en este navegador' : 'Los datos viven en la nube'}>
+            <div className="flex items-center gap-1.5">
+              {backend === 'local' ? <HardDrive size={13} /> : <Cloud size={13} className="text-green" />}
+              {backend === 'local' ? 'Modo local' : 'En la nube'}
+            </div>
+            {correo && <div className="mt-0.5 truncate">{correo}</div>}
           </div>
+          {backend !== 'local' && <Sincronizar />}
           <button onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')} className="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-text" aria-label="Cambiar tema">
             {tema === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -203,6 +238,12 @@ export function Layout({ children }: { children: ReactNode }) {
               <div className="grid grid-cols-2 gap-1">{g.items.map(link)}</div>
             </div>
           ))}
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2 text-xs text-faint">
+            <span className="min-w-0 truncate">
+              {backend === 'local' ? 'Modo local: los datos viven en este celular' : `En la nube · ${correo ?? '…'}`}
+            </span>
+            {backend !== 'local' && <Sincronizar />}
+          </div>
           <button onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')} className="flex items-center gap-2 px-3 text-sm text-muted">
             {tema === 'dark' ? <Sun size={16} /> : <Moon size={16} />} Cambiar a modo {tema === 'dark' ? 'claro' : 'oscuro'}
           </button>

@@ -109,21 +109,95 @@ let contenidoListo = false
 let errorContenido: string | null = null
 let promesaContenido: Promise<void> | null = null
 
-/** Baja el contenido privado una sola vez. Lo esperan Mentalidad e Ideación antes de decidir si «falta». */
+/**
+ * Baja el contenido privado una sola vez, en dos tiempos: primero el texto (la Semana 2 y la
+ * ideación pesan ~70 KB y con eso ya se ve todo), después las imágenes del documento (~2 MB),
+ * de a una, sin bloquear nada. Antes iba todo junto y en el celular por datos se caía entero.
+ */
 export function cargarContenido(reintentar = false): Promise<void> {
   if (!supabase) return Promise.resolve()
   if (reintentar && errorContenido) promesaContenido = null
   return (promesaContenido ??= (async () => {
+    const sb = supabase!
     try {
-      const filas = await leerConReintento('contenido')
-      cache = { ...cache, contenido: filas as Cache['contenido'] }
+      let texto: Cache['contenido'] = []
+      for (let i = 0; ; i++) {
+        const { data, error } = await sb.from('contenido').select('*').not('id', 'like', 'img-%')
+        if (!error) {
+          texto = (data ?? []) as Cache['contenido']
+          break
+        }
+        if (i >= 3) throw new Error(error.message)
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
+      }
+      cache = { ...cache, contenido: [...texto, ...cache.contenido.filter((x) => !texto.some((y) => y.id === x.id))] }
       errorContenido = null
     } catch (e) {
       errorContenido = (e as Error).message
     }
     contenidoListo = true
     emitir()
+    if (!errorContenido) void cargarImagenes()
   })())
+}
+
+async function cargarImagenes() {
+  const sb = supabase!
+  const { data } = await sb.from('contenido').select('id').like('id', 'img-%')
+  for (const { id } of (data ?? []) as { id: string }[]) {
+    if (cache.contenido.some((x) => x.id === id)) continue
+    for (let i = 0; i < 3; i++) {
+      const { data: fila, error } = await sb.from('contenido').select('*').eq('id', id).maybeSingle()
+      if (!error) {
+        if (fila) {
+          cache = { ...cache, contenido: [...cache.contenido, fila as Cache['contenido'][number]] }
+          emitir()
+        }
+        break
+      }
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+  }
+}
+
+// ── Sincronización entre equipos ────────────────────────────────────────
+// La app trabaja sobre una copia en memoria: lo que escribes en el celular no aparecía en
+// el PC hasta recargar (y en el iPhone la app instalada casi nunca recarga). Ahora se vuelve
+// a leer la nube al volver a la app y cada minuto mientras está abierta. Si hay escrituras
+// en camino, se espera: leer antes de que lleguen pisaría lo que acabas de hacer.
+
+let pendientes = 0
+let escrituras = 0
+let refrescando = false
+let ultimoRefresco = 0
+
+export async function refrescar(forzar = false) {
+  if (!supabase || !listo || refrescando || pendientes > 0) return
+  if (!forzar && Date.now() - ultimoRefresco < 15_000) return
+  refrescando = true
+  const antes = escrituras
+  try {
+    const tablas = TABLAS.filter((t) => t !== 'contenido')
+    const res = await Promise.all(tablas.map(async (t) => [t, await leerTabla(t)] as const))
+    if (pendientes > 0 || escrituras !== antes) return // alguien escribió mientras leíamos: se descarta esta lectura
+    let cambio = false
+    const nuevo = { ...cache }
+    for (const [t, filas] of res) {
+      if (JSON.stringify(filas) !== JSON.stringify(cache[t])) {
+        ;(nuevo as Record<string, unknown>)[t] = filas
+        cambio = true
+      }
+    }
+    ultimoRefresco = Date.now()
+    if (cambio) {
+      cache = nuevo
+      emitir()
+    }
+  } catch {
+    /* sin conexión: se intenta en el próximo */
+  } finally {
+    refrescando = false
+  }
 }
 
 export const estadoContenido = () => ({ listo: contenidoListo, error: errorContenido })
@@ -135,6 +209,8 @@ export const nuevoId = () => crypto.randomUUID()
 
 async function persistir(t: Tabla, filas: object[], borrar: string[] = []) {
   if (!supabase) return guardarLocal(t)
+  pendientes++
+  escrituras++
   try {
     if (filas.length) {
       for (let i = 0; i < filas.length; i += 500) {
@@ -149,6 +225,8 @@ async function persistir(t: Tabla, filas: object[], borrar: string[] = []) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : JSON.stringify(e)
     avisar(`No se guardó en la nube (${t}): ${msg}`)
+  } finally {
+    pendientes--
   }
 }
 

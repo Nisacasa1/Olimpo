@@ -1,8 +1,15 @@
 // Olimpo · service worker mínimo: la app abre sin conexión con lo último que cargó.
 // No toca los datos (Supabase) ni el contenido privado.
-const CACHE = 'olimpo-v1'
+const CACHE = 'olimpo-__VERSION__' // lo reemplaza el build: una versión por publicación
 self.addEventListener('install', () => self.skipWaiting())
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
+self.addEventListener('activate', (e) =>
+  e.waitUntil(
+    caches
+      .keys()
+      .then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  ),
+)
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
   if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/privado/')) return
