@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { useEffect, useState, type ComponentProps, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import type { Tono } from '../lib/metricas'
 import { useAvisos } from '../lib/store'
 
@@ -153,9 +153,9 @@ export function Btn({ variante = 'secundario', className, children, chico, ...p 
   )
 }
 
-const campo = 'w-full rounded-xl border border-line-2 bg-bg-2 px-3 text-sm text-text outline-none transition placeholder:text-faint focus:border-blue focus:ring-2 focus:ring-blue/25'
+const campo = 'w-full rounded-xl border border-line-2 bg-bg-2 px-3 text-[16px] text-text md:text-sm outline-none transition placeholder:text-faint focus:border-blue focus:ring-2 focus:ring-blue/25'
 
-export function Input({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, ...p }: ComponentProps<'input'>) {
   return <input className={cx(campo, 'h-10', className)} {...p} />
 }
 
@@ -236,6 +236,27 @@ export function Segmento<T extends string | number>({ opciones, valor, onChange,
 
 // ── Modal ─────────────────────────────────────────────────────────────
 
+/**
+ * La parte de la pantalla que de verdad se ve. En el iPhone el teclado tapa la mitad de
+ * abajo sin achicar la ventana: si el modal se centra en la ventana, queda debajo del teclado.
+ */
+function useAreaVisible(activo: boolean) {
+  const [area, setArea] = useState<{ top: number; height: number } | null>(null)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!activo || !vv) return
+    const f = () => setArea({ top: vv.offsetTop, height: vv.height })
+    f()
+    vv.addEventListener('resize', f)
+    vv.addEventListener('scroll', f)
+    return () => {
+      vv.removeEventListener('resize', f)
+      vv.removeEventListener('scroll', f)
+    }
+  }, [activo])
+  return area
+}
+
 export function Modal({ abierto, onCerrar, titulo, children, ancho = 'max-w-lg', pie }: { abierto: boolean; onCerrar: () => void; titulo: ReactNode; children: ReactNode; ancho?: string; pie?: ReactNode }) {
   useEffect(() => {
     if (!abierto) return
@@ -247,13 +268,18 @@ export function Modal({ abierto, onCerrar, titulo, children, ancho = 'max-w-lg',
       document.body.style.overflow = ''
     }
   }, [abierto, onCerrar])
+  const area = useAreaVisible(abierto)
   if (!abierto) return null
   // Portal al body: la animación de entrada de la página crea un contenedor que
   // atraparía al elemento fijo y lo desplazaría con el scroll.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-6" onMouseDown={onCerrar}>
+    <div
+      className="fixed inset-x-0 top-0 z-50 flex h-dvh items-center justify-center bg-black/60 p-3 backdrop-blur-sm md:p-6"
+      style={area ? { top: area.top, height: area.height } : undefined}
+      onMouseDown={onCerrar}
+    >
       <div
-        className={cx('rise flex max-h-[92vh] w-full flex-col rounded-t-3xl border border-line-2 bg-surface shadow-2xl md:rounded-3xl', ancho)}
+        className={cx('rise flex max-h-full w-full flex-col rounded-3xl border border-line-2 bg-surface shadow-2xl', ancho)}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Area, Badge, Barra, Btn, Card, CardHead, Check, cx, Input, Kpi, Modal, Pagina, Pill, Segmento, Select, Vacio } from '../components/ui'
 import { diaLocal, fmt, hoyISO } from '../lib/format'
-import { indiceDelDia, importarArchivo, ITEMS_RITUAL, lecturaCompleta, RITUAL, useSemana2, type Documento, type EstadoEjercicio, type Modulo, type Semana2 } from '../lib/semana2'
+import { indiceDelDia, importarArchivo, reintentarSemana2, ITEMS_RITUAL, lecturaCompleta, RITUAL, useSemana2, type Documento, type EstadoEjercicio, type Modulo, type Semana2 } from '../lib/semana2'
 import { actualizar, avisar, borrar, insertar, useAjustes, useTabla } from '../lib/store'
 import type { Dia } from '../lib/types'
 
@@ -14,7 +14,27 @@ export default function Mentalidad() {
   const s = useSemana2()
   const [tab, setTab] = useState<Tab>('hoy')
 
-  if (s.estado === 'cargando') return <Pagina titulo="Mentalidad">{null}</Pagina>
+  if (!s.doctrina && s.estado === 'cargando')
+    return (
+      <Pagina titulo="Mentalidad">
+        <div className="flex items-center gap-3 py-16 text-sm text-faint">
+          <span className="size-4 animate-spin rounded-full border-2 border-line-2 border-t-text" /> Bajando tu Semana 2…
+        </div>
+      </Pagina>
+    )
+  if (!s.doctrina && s.estado === 'error')
+    return (
+      <Pagina titulo="Mentalidad">
+        <Card>
+          <Vacio
+            icono={<AlertTriangle size={20} />}
+            titulo="No se pudo bajar la Semana 2"
+            texto="Tu contenido está guardado en la nube: lo que falló fue la conexión. Vuelve a intentarlo, o espera a tener mejor señal."
+            accion={<Btn variante="primario" onClick={() => void reintentarSemana2()}>Reintentar</Btn>}
+          />
+        </Card>
+      </Pagina>
+    )
   if (!s.doctrina) return <SinContenido />
 
   return (

@@ -3,7 +3,7 @@
 // en la nube se guarda una vez en la tabla `contenido`.
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
-import { backend, insertar, todo, useTabla } from './store'
+import { backend, cargarContenido, estadoContenido, insertar, todo, useTabla } from './store'
 
 const estado = new Map<string, 'cargando' | 'listo' | 'falta'>()
 const intentados = new Set<string>()
@@ -14,6 +14,13 @@ export async function cargarPaquete(id: string) {
   if (intentados.has(id)) return
   intentados.add(id)
   estado.set(id, 'cargando')
+  await cargarContenido()
+  if (estadoContenido().error) {
+    intentados.delete(id)
+    estado.set(id, 'falta')
+    emitir()
+    return
+  }
   const hay = todo().contenido.some((x) => x.id === id)
   if (!hay || backend === 'local') {
     try {

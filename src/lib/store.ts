@@ -52,32 +52,81 @@ function guardarLocal(t: Tabla) {
 
 // ── Carga ───────────────────────────────────────────────────────────────
 
+async function leerTabla(t: Tabla): Promise<unknown[]> {
+  const sb = supabase!
+  const filas: unknown[] = []
+  // Supabase devuelve máximo 1000 filas por consulta: se pagina. El contenido trae
+  // imágenes y pesa megas, así que va de a 5 filas.
+  const paso = t === 'contenido' ? 5 : 1000
+  for (let desde = 0; ; desde += paso) {
+    const { data, error } = await sb.from(t).select('*').range(desde, desde + paso - 1)
+    if (error) throw new Error(`${t}: ${error.message}`)
+    filas.push(...(data ?? []))
+    if (!data || data.length < paso) break
+  }
+  return filas
+}
+
+/** Lee una tabla con dos reintentos: en el celular una consulta a veces se cae sin razón. */
+async function leerConReintento(t: Tabla): Promise<unknown[]> {
+  for (let i = 0; ; i++) {
+    try {
+      return await leerTabla(t)
+    } catch (e) {
+      if (i >= 2) throw e
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)))
+    }
+  }
+}
+
 export async function cargar() {
   if (supabase) {
-    const sb = supabase
+    // El contenido privado (doctrina e imágenes, ~2 MB) NO bloquea el arranque:
+    // se baja aparte, en segundo plano. Antes iba con todo lo demás y en el iPhone
+    // por datos podía caerse, y la app creía que la Semana 2 no existía.
+    const tablas = TABLAS.filter((t) => t !== 'contenido')
     const res = await Promise.all(
-      TABLAS.map(async (t) => {
-        const filas: unknown[] = []
-        // Supabase devuelve máximo 1000 filas por consulta: se pagina.
-        for (let desde = 0; ; desde += 1000) {
-          const { data, error } = await sb.from(t).select('*').range(desde, desde + 999)
-          if (error) throw new Error(`${t}: ${error.message}`)
-          filas.push(...(data ?? []))
-          if (!data || data.length < 1000) break
+      tablas.map(async (t) => {
+        try {
+          return [t, await leerConReintento(t)] as const
+        } catch (e) {
+          errorCarga = (e as Error).message
+          return [t, []] as const
         }
-        return [t, filas] as const
       }),
-    ).catch((e: Error) => {
-      errorCarga = e.message
-      return null
-    })
-    if (res) cache = Object.fromEntries(res) as unknown as Cache
+    )
+    cache = { ...vacio(), ...(Object.fromEntries(res) as unknown as Cache) }
+    void cargarContenido()
   } else {
     cache = Object.fromEntries(TABLAS.map((t) => [t, leerLocal(t)])) as unknown as Cache
+    contenidoListo = true
   }
   listo = true
   emitir()
 }
+
+let contenidoListo = false
+let errorContenido: string | null = null
+let promesaContenido: Promise<void> | null = null
+
+/** Baja el contenido privado una sola vez. Lo esperan Mentalidad e Ideación antes de decidir si «falta». */
+export function cargarContenido(reintentar = false): Promise<void> {
+  if (!supabase) return Promise.resolve()
+  if (reintentar && errorContenido) promesaContenido = null
+  return (promesaContenido ??= (async () => {
+    try {
+      const filas = await leerConReintento('contenido')
+      cache = { ...cache, contenido: filas as Cache['contenido'] }
+      errorContenido = null
+    } catch (e) {
+      errorContenido = (e as Error).message
+    }
+    contenidoListo = true
+    emitir()
+  })())
+}
+
+export const estadoContenido = () => ({ listo: contenidoListo, error: errorContenido })
 
 // ── Escritura ───────────────────────────────────────────────────────────
 

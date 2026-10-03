@@ -1,7 +1,8 @@
 import { Maximize2, Minimize2, Minus, Pause, Play, Square } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MOTIVOS, mmss, reloj, trabajadoMs, useReloj } from '../lib/foco'
+import { mmss, reloj, trabajadoMs, useReloj } from '../lib/foco'
+import { Distraccion } from './foco/Distraccion'
 import { cx } from './ui'
 
 /**
@@ -101,6 +102,8 @@ export function FocoPantalla({ onTerminar, onMinimizar, bloqueado }: { onTermina
     return () => window.removeEventListener('keydown', f)
   })
 
+  // El anillo cede espacio cuando abajo se abre el panel de distracción, que es más alto
+  const anillo = `min(78vmin, 540px, calc(100dvh - ${motivos ? 400 : 230}px))`
   const pct = temporizador ? Math.min(1, ms / objetivo) : (ms % 60_000) / 60_000
   const R = 47
   const C = 2 * Math.PI * R
@@ -131,15 +134,15 @@ export function FocoPantalla({ onTerminar, onMinimizar, bloqueado }: { onTermina
       </div>
 
       {/* El reloj */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
+      <div className="foco-crece relative z-10 flex flex-1 flex-col items-center justify-center px-6">
         <div className="mb-[4vmin] max-w-[80vw] truncate text-center text-[12px] font-medium tracking-[0.28em] text-white/45 uppercase md:text-[13px]">{r.tarea}</div>
-        <div className="foco-anillo relative grid place-items-center" style={{ width: 'min(78vmin, 540px)', height: 'min(78vmin, 540px)' }}>
+        <div className="foco-anillo relative grid place-items-center transition-[width,height] duration-500" style={{ width: anillo, height: anillo }}>
           <svg viewBox="0 0 100 100" className="absolute inset-0 size-full -rotate-90">
             <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
             <circle className="foco-arco" cx="50" cy="50" r={R} fill="none" stroke={color} strokeWidth="0.75" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} opacity={r.distraido ? 0.6 : 1} />
           </svg>
           <div className="text-center">
-            <div className={cx('num leading-none font-extralight tracking-[-0.04em] transition-colors duration-700', r.distraido ? 'text-white/35' : pasado ? 'text-violet' : !corriendo ? 'text-white/55' : 'text-white/95')} style={{ fontSize: 'clamp(64px, 17vmin, 168px)' }}>
+            <div className={cx('num leading-none font-extralight tracking-[-0.04em] transition-colors duration-700', r.distraido ? 'text-white/35' : pasado ? 'text-violet' : !corriendo ? 'text-white/55' : 'text-white/95')} style={{ fontSize: `clamp(40px, calc(${anillo} * 0.3), 168px)` }}>
               {tiempo}
             </div>
             <div className="mt-[2.4vmin] flex items-center justify-center gap-2 text-[11.5px] tracking-[0.14em] text-white/40 uppercase">
@@ -163,26 +166,7 @@ export function FocoPantalla({ onTerminar, onMinimizar, bloqueado }: { onTermina
             </button>
           </div>
         ) : motivos ? (
-          <div className="flex max-w-xl flex-col items-center gap-3">
-            <div className="text-[11px] tracking-[0.14em] text-white/40 uppercase">¿Qué te sacó? El reloj se para</div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {MOTIVOS.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => {
-                    reloj.distraje(m)
-                    setMotivos(false)
-                  }}
-                  className="rounded-full border border-white/12 px-4 py-2 text-sm text-white/70 transition hover:border-red/60 hover:text-white"
-                >
-                  {m}
-                </button>
-              ))}
-              <button onClick={() => setMotivos(false)} className="rounded-full px-4 py-2 text-sm text-white/35 hover:text-white/70">
-                Cancelar
-              </button>
-            </div>
-          </div>
+          <Distraccion oscuro onListo={() => setMotivos(false)} />
         ) : (
           <div className="flex items-center gap-3">
             {corriendo && (

@@ -4,7 +4,7 @@
 // a git ni al deploy— y en la nube queda guardado en tu base de datos.
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
-import { backend, insertar, todo, useTabla } from './store'
+import { backend, cargarContenido, estadoContenido, insertar, todo, useTabla } from './store'
 import type { Mentalidad } from './types'
 
 export interface Idea {
@@ -81,7 +81,7 @@ const FECHA_CIERRE_SEMANA = '2026-08-23' // el roadmap registra la Semana 2 cerr
 
 // ── Carga ───────────────────────────────────────────────────────────────
 
-type Estado = 'cargando' | 'listo' | 'sin-contenido'
+type Estado = 'cargando' | 'listo' | 'sin-contenido' | 'error'
 let estado: Estado = 'cargando'
 let intentado = false
 const subs = new Set<() => void>()
@@ -126,6 +126,14 @@ export function sembrar(p: Paquete) {
 export async function cargarSemana2() {
   if (intentado) return
   intentado = true
+  await cargarContenido()
+  if (estadoContenido().error) {
+    // No se pudo bajar: no es que no exista. Se puede reintentar.
+    intentado = false
+    estado = 'error'
+    emitir()
+    return
+  }
   const hay = todo().contenido.some((x) => x.id === 'semana-2')
   // En modo local el contenido no se guarda en el navegador: se lee siempre del archivo.
   if (!hay || backend === 'local') {
@@ -134,6 +142,15 @@ export async function cargarSemana2() {
   }
   estado = todo().contenido.some((x) => x.id === 'semana-2') ? 'listo' : 'sin-contenido'
   emitir()
+}
+
+/** Vuelve a intentar bajar el contenido cuando la conexión falló. */
+export async function reintentarSemana2() {
+  estado = 'cargando'
+  emitir()
+  await cargarContenido(true)
+  intentado = false
+  await cargarSemana2()
 }
 
 export async function importarArchivo(file: File) {

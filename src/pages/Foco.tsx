@@ -1,10 +1,11 @@
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Check as CheckIcon, Expand, Pause, Play, Plus, Square, Star, Trash2, Wind, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Check as CheckIcon, Expand, Minus, Pause, Play, Plus, Square, Star, Trash2, Wind, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FocoPantalla } from '../components/FocoPantalla'
+import { Distraccion } from '../components/foco/Distraccion'
 import { Area, Btn, Card, CardHead, cx, Input, Kpi, Modal, Num, Pagina, Segmento } from '../components/ui'
-import { campana, MOTIVOS, mmss, reloj, trabajadoMs, useReloj, useTic, type TipoTrabajo } from '../lib/foco'
+import { campana, mmss, reloj, trabajadoMs, useReloj, useTic, type TipoTrabajo } from '../lib/foco'
 import { fmt, hoyISO } from '../lib/format'
 import { actualizar, avisar, borrar, insertar, useTabla } from '../lib/store'
 import type { CierreDia, Dia, PrioridadDia } from '../lib/types'
@@ -36,66 +37,107 @@ function Temporizador() {
   useTic(r.activo)
   const ms = trabajadoMs(r)
   const objetivo = r.objetivoMin * 60_000
-  const pasado = r.modo === 'temporizador' && ms >= objetivo
+  const temporizador = r.modo === 'temporizador'
+  const pasado = temporizador && ms >= objetivo
   const [terminar, setTerminar] = useState(false)
   const [respirar, setRespirar] = useState(false)
   const [opciones, setOpciones] = useState(false)
+  const [motivos, setMotivos] = useState(false)
   // La sesión arranca a pantalla completa; minimizarla no para el reloj
   const [inmersivo, setInmersivo] = useState(true)
+  const tarea = useRef<HTMLInputElement>(null)
   const deHoy = prioridades.filter((p) => p.fecha === hoyISO() && !p.hecha).sort((a, b) => a.orden - b.orden)
 
   // Al llegar al objetivo: suena una vez y sigue contando (el objetivo es una meta, no una guillotina)
   useEffect(() => {
-    if (r.activo && r.modo === 'temporizador' && pasado && !r.avisado) {
+    if (r.activo && temporizador && pasado && !r.avisado) {
       campana()
       if ('Notification' in window && Notification.permission === 'granted') new Notification('Olimpo · llegaste al objetivo', { body: `${r.objetivoMin} min en «${r.tarea || 'tu sesión'}». Termina cuando acabes.` })
       reloj.avisado()
     }
   })
 
-  const pct = r.modo === 'temporizador' ? Math.min(1, ms / objetivo) : (ms % 3_600_000) / 3_600_000
-  const R = 108
-  const C = 2 * Math.PI * R
+  const empezar = () => {
+    if (!r.tarea.trim()) {
+      tarea.current?.focus()
+      return avisar('Primero escribe en qué vas a trabajar, o elige una prioridad.')
+    }
+    setInmersivo(true)
+    reloj.empezar()
+  }
+  const ajustar = (d: number) => reloj.config({ objetivoMin: Math.min(240, Math.max(5, r.objetivoMin + d)) })
+
+  const tiempo = !r.activo ? (temporizador ? mmss(objetivo) : '00:00') : temporizador ? (pasado ? `+${mmss(ms - objetivo)}` : mmss(objetivo - ms)) : mmss(ms)
+  const pct = !r.activo ? (temporizador ? 1 : 0) : temporizador ? Math.min(1, ms / objetivo) : (ms % 60_000) / 60_000
+  const estado = !r.activo ? (temporizador ? 'minutos de foco' : 'cuenta hacia arriba') : r.distraido ? 'distraído' : !corriendo ? 'en pausa' : pasado ? 'pasaste el objetivo' : temporizador ? `de ${r.objetivoMin} min` : 'trabajo real'
 
   return (
-    <Card className="relative overflow-hidden p-6">
+    <Card className="relative overflow-hidden p-5 md:p-6">
+      <div className="flex items-center justify-between gap-3">
+        {!r.activo ? (
+          <Segmento
+            valor={r.modo}
+            onChange={(m) => reloj.config({ modo: m })}
+            opciones={[
+              { valor: 'temporizador', etiqueta: 'Temporizador' },
+              { valor: 'contador', etiqueta: 'Contador' },
+            ]}
+          />
+        ) : (
+          <div className="min-w-0 truncate text-[11px] font-semibold tracking-[0.18em] text-muted uppercase">{r.tarea}</div>
+        )}
+        {!r.activo ? (
+          <button onClick={() => setOpciones(!opciones)} className="text-xs text-muted hover:text-text">
+            {opciones ? 'Menos' : 'Opciones'}
+          </button>
+        ) : (
+          <Btn chico variante="fantasma" onClick={() => setInmersivo(true)}>
+            <Expand size={13} /> Pantalla completa
+          </Btn>
+        )}
+      </div>
+
+      {/* El reloj en chico: el mismo que se agranda al empezar */}
+      <div className="my-5 flex items-center justify-center gap-4">
+        {!r.activo && temporizador && (
+          <button onClick={() => ajustar(-5)} className="grid size-10 place-items-center rounded-full border border-line text-muted transition hover:border-line-2 hover:text-text" aria-label="Menos 5 minutos">
+            <Minus size={16} />
+          </button>
+        )}
+        <RelojCompacto tiempo={tiempo} pct={pct} estado={estado} vivo={r.activo && corriendo && !r.distraido} tono={r.distraido ? 'rojo' : pasado ? 'dorado' : r.activo && !corriendo ? 'apagado' : 'normal'} />
+        {!r.activo && temporizador && (
+          <button onClick={() => ajustar(5)} className="grid size-10 place-items-center rounded-full border border-line text-muted transition hover:border-line-2 hover:text-text" aria-label="Más 5 minutos">
+            <Plus size={16} />
+          </button>
+        )}
+      </div>
+
       {!r.activo ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Segmento
-              valor={r.modo}
-              onChange={(m) => reloj.config({ modo: m })}
-              opciones={[
-                { valor: 'temporizador', etiqueta: 'Temporizador' },
-                { valor: 'contador', etiqueta: 'Contador' },
-              ]}
-            />
-            <button onClick={() => setOpciones(!opciones)} className="text-xs text-muted hover:text-text">
-              {opciones ? 'Menos' : 'Opciones'}
-            </button>
-          </div>
-          <Input value={r.tarea} onChange={(e) => reloj.config({ tarea: e.target.value, prioridad_id: null })} placeholder="¿En qué vas a trabajar? Una sola cosa" className="h-12 text-base" />
-          {deHoy.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {deHoy.map((p) => (
-                <button key={p.id} onClick={() => reloj.config({ tarea: p.texto, prioridad_id: p.id })} className={cx('rounded-lg border px-2.5 py-1 text-xs transition', r.prioridad_id === p.id ? 'border-blue bg-blue-soft text-text' : 'border-line text-muted hover:border-line-2')}>
-                  {p.texto}
-                </button>
-              ))}
-            </div>
-          )}
-          {r.modo === 'temporizador' && (
-            <div className="flex flex-wrap items-center gap-2">
+          {temporizador && (
+            <div className="flex justify-center gap-1.5">
               {[25, 50, 90].map((m) => (
-                <button key={m} onClick={() => reloj.config({ objetivoMin: m })} className={cx('rounded-lg border px-3 py-1.5 text-sm transition', r.objetivoMin === m ? 'border-blue bg-blue-soft text-text' : 'border-line text-muted hover:border-line-2')}>
+                <button key={m} onClick={() => reloj.config({ objetivoMin: m })} className={cx('rounded-full border px-3.5 py-1 text-xs transition', r.objetivoMin === m ? 'border-blue bg-blue text-on-accent' : 'border-line text-muted hover:border-line-2 hover:text-text')}>
                   {m} min
                 </button>
               ))}
-              <Num className="h-9 w-24" value={r.objetivoMin} onChange={(n) => reloj.config({ objetivoMin: Math.max(1, n ?? 25) })} />
+            </div>
+          )}
+          <Input ref={tarea} value={r.tarea} onChange={(e) => reloj.config({ tarea: e.target.value, prioridad_id: null })} onKeyDown={(e) => e.key === 'Enter' && empezar()} placeholder="¿En qué vas a trabajar? Una sola cosa" className="h-12 text-center md:text-base" />
+          {deHoy.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-center text-[11px] text-faint">o elige una de tus prioridades</div>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {deHoy.map((p) => (
+                  <button key={p.id} onClick={() => reloj.config({ tarea: p.texto, prioridad_id: p.id })} className={cx('flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition', r.prioridad_id === p.id ? 'border-blue bg-blue-soft text-text' : 'border-line text-muted hover:border-line-2 hover:text-text')}>
+                    <span className="num font-semibold">{p.orden + 1}</span> {p.texto}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {opciones && (
-            <div className="space-y-2 rounded-xl bg-surface-2/50 p-3">
+            <div className="space-y-2 rounded-2xl border border-line p-3">
               <div className="text-xs text-muted">Qué tipo de trabajo es</div>
               <Segmento valor={r.tipo} onChange={(t) => reloj.config({ tipo: t })} opciones={TIPOS.map((t) => ({ valor: t.k, etiqueta: t.n }))} />
               <div className="text-[11px] text-faint">{TIPOS.find((t) => t.k === r.tipo)?.d}. Un día que solo es «crear» es el que quema.</div>
@@ -104,83 +146,68 @@ function Temporizador() {
               </Btn>
             </div>
           )}
-          <Btn variante="primario" className="h-14 w-full text-base" onClick={() => {
-              setInmersivo(true)
-              reloj.empezar()
-            }} disabled={!r.tarea.trim()}>
-            <Play size={18} /> Empezar
+          <button onClick={empezar} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue py-3.5 text-[15px] font-semibold text-on-accent transition hover:opacity-90 active:scale-[0.99]">
+            <Play size={17} fill="currentColor" /> Empezar
+          </button>
+        </div>
+      ) : r.distraido ? (
+        <div className="flex flex-col items-center gap-3">
+          <div className="text-sm text-muted">
+            Te sacó: <b className="text-text">{r.interrupciones.at(-1)?.motivo}</b>
+          </div>
+          <Btn variante="primario" className="h-11 w-full max-w-xs" onClick={() => reloj.volvi()}>
+            Volví
           </Btn>
         </div>
+      ) : motivos ? (
+        <div className="flex justify-center">
+          <Distraccion onListo={() => setMotivos(false)} />
+        </div>
       ) : (
-        <div className="flex flex-col items-center">
-          <div className="mb-2 flex w-full items-center justify-between gap-3">
-            <div className="min-w-0 truncate text-sm text-muted">{r.tarea}</div>
-            <Btn chico variante="fantasma" onClick={() => setInmersivo(true)}>
-              <Expand size={13} /> Pantalla completa
+        <div className="flex items-center justify-center gap-2">
+          {corriendo && (
+            <Btn className="h-11" onClick={() => setMotivos(true)}>
+              Me distraje
             </Btn>
-          </div>
-          <div className="relative grid place-items-center">
-            <svg width="260" height="260" viewBox="0 0 260 260" className="-rotate-90">
-              <circle cx="130" cy="130" r={R} fill="none" stroke="var(--surface-2)" strokeWidth="10" />
-              <circle cx="130" cy="130" r={R} fill="none" stroke={pasado ? 'var(--green)' : r.distraido ? 'var(--red)' : 'var(--blue)'} strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} className="transition-[stroke-dashoffset] duration-500" />
-            </svg>
-            <div className="absolute text-center">
-              <div className={cx('num text-5xl font-semibold tracking-tight', pasado && 'text-green')}>
-                {r.modo === 'temporizador' ? (pasado ? `+${mmss(ms - objetivo)}` : mmss(objetivo - ms)) : mmss(ms)}
-              </div>
-              <div className="mt-1 text-xs text-faint">
-                {r.distraido ? 'distraído — el reloj está parado' : !corriendo ? 'en pausa' : r.modo === 'temporizador' ? (pasado ? 'pasaste el objetivo · sigue o termina' : `de ${r.objetivoMin} min`) : 'trabajo real'}
-              </div>
-            </div>
-          </div>
-          {r.distraido ? (
-            <div className="mt-4 w-full space-y-2">
-              <div className="text-center text-sm">
-                Te sacó: <b>{r.interrupciones.at(-1)?.motivo}</b>
-              </div>
-              <Btn variante="primario" className="h-12 w-full" onClick={() => reloj.volvi()}>
-                Volví
-              </Btn>
-            </div>
-          ) : (
-            <>
-              <div className="mt-5 grid w-full grid-cols-2 gap-2">
-                <Btn className="h-12" onClick={() => (corriendo ? reloj.pausar() : reloj.seguir())}>
-                  {corriendo ? (
-                    <>
-                      <Pause size={16} /> Pausa
-                    </>
-                  ) : (
-                    <>
-                      <Play size={16} /> Seguir
-                    </>
-                  )}
-                </Btn>
-                <Btn variante="primario" className="h-12" onClick={() => setTerminar(true)}>
-                  <Square size={15} /> Terminar
-                </Btn>
-              </div>
-              {corriendo && (
-                <div className="mt-3 w-full">
-                  <div className="mb-1.5 text-center text-[11px] text-faint">¿Me distraje? Toca qué te sacó y el reloj se para</div>
-                  <div className="flex flex-wrap justify-center gap-1.5">
-                    {MOTIVOS.map((m) => (
-                      <button key={m} onClick={() => reloj.distraje(m)} className="rounded-lg border border-line px-2.5 py-1 text-xs text-muted transition hover:border-red/50 hover:text-red">
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
           )}
-          {r.interrupciones.length > 0 && <div className="mt-3 text-[11px] text-faint">{r.interrupciones.length} interrupciones en esta sesión</div>}
+          <button onClick={() => (corriendo ? reloj.pausar() : reloj.seguir())} className="grid size-12 place-items-center rounded-full bg-blue text-on-accent transition hover:opacity-90" aria-label={corriendo ? 'Pausa' : 'Seguir'}>
+            {corriendo ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+          <Btn className="h-11" onClick={() => setTerminar(true)}>
+            <Square size={13} /> Terminar
+          </Btn>
         </div>
       )}
+      {r.activo && r.interrupciones.length > 0 && <div className="mt-3 text-center text-[11px] text-faint">{r.interrupciones.length} {r.interrupciones.length === 1 ? 'interrupción' : 'interrupciones'} en esta sesión</div>}
+
       {r.activo && inmersivo && <FocoPantalla onTerminar={() => setTerminar(true)} onMinimizar={() => setInmersivo(false)} bloqueado={terminar} />}
       {terminar && <Terminar onCerrar={() => setTerminar(false)} />}
       {respirar && <Respirar onCerrar={() => setRespirar(false)} />}
     </Card>
+  )
+}
+
+/** El reloj en chico, con el mismo trazo que la pantalla completa. */
+function RelojCompacto({ tiempo, pct, estado, vivo, tono }: { tiempo: string; pct: number; estado: string; vivo: boolean; tono: 'normal' | 'rojo' | 'dorado' | 'apagado' }) {
+  const R = 47
+  const C = 2 * Math.PI * R
+  const trazo = tono === 'rojo' ? 'var(--red)' : tono === 'dorado' ? 'var(--violet)' : 'var(--text)'
+  return (
+    <div className={cx('relative grid size-[200px] shrink-0 place-items-center md:size-[220px]', vivo && 'foco-vivo')}>
+      <div className="foco-anillo absolute inset-0">
+        <svg viewBox="0 0 100 100" className="size-full -rotate-90">
+          <circle cx="50" cy="50" r={R} fill="none" stroke="var(--line)" strokeWidth="1" />
+          <circle className="foco-arco" cx="50" cy="50" r={R} fill="none" stroke={trazo} strokeWidth="1.1" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} opacity={tono === 'apagado' ? 0.45 : 1} />
+        </svg>
+      </div>
+      <div className="relative text-center">
+        <div className={cx('num text-[46px] leading-none font-extralight tracking-[-0.04em] md:text-[52px]', tono === 'dorado' ? 'text-violet' : tono === 'rojo' || tono === 'apagado' ? 'text-muted' : 'text-text')}>{tiempo}</div>
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[10.5px] tracking-[0.12em] text-faint uppercase">
+          {vivo && <span className="foco-latido size-1.5 rounded-full bg-text" />}
+          {estado}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -287,9 +314,11 @@ function Respirar({ onCerrar }: { onCerrar: () => void }) {
 
 // ── Prioridades ───────────────────────────────────────────────────────
 
-function ListaPrioridades({ fecha, titulo, sub }: { fecha: string; titulo: string; sub: string }) {
+function ListaPrioridades({ fecha, titulo, sub, deHoy }: { fecha: string; titulo: string; sub: string; deHoy?: boolean }) {
   const prioridades = useTabla('prioridades')
+  const r = useReloj()
   const lista = prioridades.filter((p) => p.fecha === fecha).sort((a, b) => a.orden - b.orden)
+  const hechas = lista.filter((p) => p.hecha).length
   const [nueva, setNueva] = useState('')
   const agregar = () => {
     if (!nueva.trim() || lista.length >= 3) return
@@ -298,37 +327,68 @@ function ListaPrioridades({ fecha, titulo, sub }: { fecha: string; titulo: strin
   }
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between">
-        <div className="text-sm font-semibold">{titulo}</div>
-        <div className="text-[11px] text-faint">{sub}</div>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">{titulo}</div>
+          <div className="mt-0.5 text-[11px] text-faint">{sub}</div>
+        </div>
+        {lista.length > 0 && <div className="num shrink-0 pt-0.5 text-xs text-muted">{hechas}/{lista.length} hechas</div>}
       </div>
-      <div className="space-y-1.5">
-        {lista.map((p: PrioridadDia, i) => (
-          <div key={p.id} className="group flex items-center gap-2.5 rounded-xl border border-line px-3 py-2.5">
-            <button onClick={() => actualizar('prioridades', p.id, { hecha: !p.hecha })} className={cx('grid size-5 shrink-0 place-items-center rounded-md border transition', p.hecha ? 'border-green bg-green text-on-accent' : 'border-line-2')}>
-              {p.hecha && <CheckIcon size={13} />}
-            </button>
-            <span className="num w-4 text-xs text-faint">{i + 1}</span>
-            <span className={cx('min-w-0 flex-1 text-sm', p.hecha && 'text-faint line-through')}>{p.texto}</span>
-            {fecha === hoyISO() && !p.hecha && (
-              <button onClick={() => reloj.config({ tarea: p.texto, prioridad_id: p.id })} className="text-faint hover:text-text" title="Enfocarme en esta">
-                <Play size={14} />
+      <ol className="space-y-2">
+        {lista.map((p: PrioridadDia, i) => {
+          const enFoco = r.activo && r.prioridad_id === p.id
+          return (
+            <li
+              key={p.id}
+              className={cx(
+                'group flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition',
+                p.hecha ? 'border-line bg-transparent' : deHoy ? 'border-line-2 bg-surface-2' : 'border-line bg-surface-2/40',
+                enFoco && 'border-text/40',
+              )}
+            >
+              <span className={cx('num grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold', p.hecha ? 'bg-green-soft text-green' : deHoy ? 'bg-blue text-on-accent' : 'border border-line-2 text-muted')}>
+                {p.hecha ? <CheckIcon size={14} /> : i + 1}
+              </span>
+              <span className={cx('min-w-0 flex-1 text-[14.5px] leading-snug', p.hecha ? 'text-faint line-through' : deHoy ? 'font-medium text-text' : 'text-muted')}>{p.texto}</span>
+              {enFoco && <span className="text-[10.5px] tracking-[0.12em] text-muted uppercase">en foco</span>}
+              {deHoy && !p.hecha && !r.activo && (
+                <button onClick={() => reloj.config({ tarea: p.texto, prioridad_id: p.id })} className={cx('grid size-8 place-items-center rounded-full transition', r.prioridad_id === p.id ? 'bg-blue text-on-accent' : 'text-faint hover:bg-surface hover:text-text')} title="Enfocarme en esta">
+                  <Play size={13} fill="currentColor" />
+                </button>
+              )}
+              <button onClick={() => actualizar('prioridades', p.id, { hecha: !p.hecha })} className={cx('grid size-8 place-items-center rounded-full transition', p.hecha ? 'text-green hover:bg-surface' : 'text-faint hover:bg-surface hover:text-green')} title={p.hecha ? 'Desmarcar' : 'Marcar como hecha'}>
+                <CheckIcon size={15} />
+              </button>
+              <button onClick={() => borrar('prioridades', p.id)} className="text-faint opacity-0 transition group-hover:opacity-100 hover:text-red max-md:opacity-60" title="Quitar">
+                <X size={14} />
+              </button>
+            </li>
+          )
+        })}
+        {lista.length < 3 && (
+          <li className="flex items-center gap-3 rounded-2xl border border-dashed border-line px-3.5 py-1.5 focus-within:border-line-2">
+            <span className="num grid size-7 shrink-0 place-items-center rounded-full border border-dashed border-line-2 text-[13px] text-faint">{lista.length + 1}</span>
+            <input
+              value={nueva}
+              onChange={(e) => setNueva(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && agregar()}
+              placeholder={lista.length === 0 ? 'La más importante del día' : 'La siguiente'}
+              className="h-10 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-faint md:text-[14.5px]"
+            />
+            {nueva.trim() && (
+              <button onClick={agregar} className="grid size-8 place-items-center rounded-full bg-blue text-on-accent" aria-label="Agregar">
+                <Plus size={15} />
               </button>
             )}
-            <button onClick={() => borrar('prioridades', p.id)} className="text-faint opacity-0 group-hover:opacity-100 hover:text-red">
-              <X size={14} />
-            </button>
-          </div>
-        ))}
-        {lista.length < 3 && (
-          <div className="flex gap-2">
-            <Input className="h-10" value={nueva} onChange={(e) => setNueva(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && agregar()} placeholder={`Prioridad ${lista.length + 1} de 3`} />
-            <Btn onClick={agregar} disabled={!nueva.trim()}>
-              <Plus size={15} />
-            </Btn>
-          </div>
+          </li>
         )}
-      </div>
+        {Array.from({ length: Math.max(0, 2 - lista.length) }, (_, k) => (
+          <li key={k} className="flex items-center gap-3 px-3.5 py-1 opacity-40">
+            <span className="num grid size-7 shrink-0 place-items-center rounded-full border border-dashed border-line text-[13px] text-faint">{lista.length + 2 + k}</span>
+            <span className="h-px flex-1 bg-line" />
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
@@ -336,9 +396,11 @@ function ListaPrioridades({ fecha, titulo, sub }: { fecha: string; titulo: strin
 function Prioridades() {
   const manana = format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
   return (
-    <Card className="space-y-6 p-5">
-      <ListaPrioridades fecha={hoyISO()} titulo="Las 3 de hoy" sub="El inventario de productividad del Daily Planner" />
-      <ListaPrioridades fecha={manana} titulo="Las 3 de mañana" sub="Se deciden esta noche, mientras sabes lo que costó hoy" />
+    <Card className="space-y-7 p-5 md:p-6">
+      <ListaPrioridades deHoy fecha={hoyISO()} titulo="Las 3 de hoy" sub="El inventario de productividad del Daily Planner" />
+      <div className="border-t border-line pt-6">
+        <ListaPrioridades fecha={manana} titulo="Las 3 de mañana" sub="Se deciden esta noche, mientras sabes lo que costó hoy" />
+      </div>
     </Card>
   )
 }

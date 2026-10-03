@@ -81,10 +81,21 @@ export const reloj = {
   seguir() {
     guardar({ ...estado, tramo: new Date().toISOString(), distraido: false })
   },
-  /** «Me distraje»: para el reloj y abre una interrupción con su motivo. */
-  distraje(motivo: string) {
-    const ahora = new Date().toISOString()
-    guardar({ ...estado, acumuladoMs: trabajadoMs(estado), tramo: null, distraido: true, interrupciones: [...estado.interrupciones, { inicio: ahora, fin: null, motivo }] })
+  /**
+   * «Me distraje»: para el reloj y abre una interrupción con su motivo. Casi nunca se
+   * marca en el momento —uno se da cuenta después—, así que se puede decir hace cuánto
+   * empezó: ese tiempo se descuenta del trabajo. No va más atrás del último «seguir».
+   */
+  distraje(motivo: string, haceMin = 0) {
+    const ahora = Date.now()
+    let desde = ahora - haceMin * 60_000
+    let acumulado = estado.acumuladoMs
+    if (estado.tramo) {
+      const t0 = new Date(estado.tramo).getTime()
+      desde = Math.max(desde, t0)
+      acumulado += desde - t0
+    }
+    guardar({ ...estado, acumuladoMs: acumulado, tramo: null, distraido: true, interrupciones: [...estado.interrupciones, { inicio: new Date(desde).toISOString(), fin: null, motivo }] })
   },
   volvi() {
     const ahora = new Date().toISOString()
@@ -99,7 +110,10 @@ export const reloj = {
   },
 }
 
-export const MOTIVOS = ['Celular', 'Redes', 'Mensajes', 'Persona', 'Hambre / cuerpo', 'Pensamiento', 'Otra tarea']
+/** Minutos que lleva el tramo en curso: el máximo que se puede descontar en una distracción. */
+export const minutosDelTramo = (r: Reloj) => (r.tramo ? Math.floor((Date.now() - new Date(r.tramo).getTime()) / 60_000) : 0)
+
+export const MOTIVOS =['Celular', 'Redes', 'Mensajes', 'Persona', 'Hambre / cuerpo', 'Pensamiento', 'Otra tarea']
 
 /** Un aviso sonoro corto (sin archivos de audio). */
 export function campana() {
