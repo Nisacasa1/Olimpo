@@ -5,8 +5,11 @@ La app de métricas de Imperium Academy para **Olimpo Acquisition**. Reemplaza l
 | Pantalla | Reemplaza a |
 |---|---|
 | **Hoy** | — el plan del día (qué hacer ahora, en orden), la proyección del mes, el cuello de botella y el ritual |
+| **Foco** | HyperFocus: temporizador o contador, «me distraje» con motivo, las 3 prioridades de hoy y de mañana, y el cierre del día (Daily Planner de Imperium) |
 | **Mentalidad** | toda la Semana 2: ritual diario, los 10 mandatos, el Banco de Sufrimiento, tu Self Transcendence Doc, los 8 módulos, los ejercicios y las 30 formas de resistencia |
 | **Ads** | Ads & Funnel Tracking Sheet, por anuncio: plan de 30 días, calculadora por gasto, ganchos y audiencias, e importación del Excel de Meta Ads Manager |
+| **Contenido** | Marca: pipeline de ideas por línea (marca personal · agencia · ads), ideación con 31 frameworks y generadores, piezas publicadas con métricas y las personas que escribieron por cada una |
+| **War Map** | el Imperium War Map: el año en una pantalla, pintado solo por lo que hiciste, con objetivos del mes, las 5 reglas y los hitos de Imperium |
 | **Proyección** | — a este ritmo, a cuánto llegas, y qué falta (clientes → llamadas → leads → pauta) |
 | **Revisión semanal** | — se arma sola cada viernes; tú pones la reflexión y una sola prioridad |
 | *Archivo · llamadas* | Llamar · Prospectos · Outreach (la llamada en frío, archivada con sus datos) |
@@ -49,9 +52,12 @@ python scripts/generar-semana-2.py
 
 Lee `privado/doctrina-semana-2.json` (los resúmenes de los módulos), tu PDF del Self Transcendence Doc y tus respuestas de `imperium/raw/`, y escribe `public/privado/semana-2.json`. La app lo carga sola: en modo local lo lee en cada arranque, y en la nube lo guarda una vez en tu base. Si un día actualizas el PDF, borra en Supabase las filas de `contenido` y `mentalidad` con id `documento` y vuelve a correr el script.
 
+La biblioteca de ideación funciona igual: `node scripts/generar-ideacion.mjs` une `privado/ideacion-biblioteca.json` y `privado/ideacion-extra.json` en `public/privado/ideacion.json`.
+
+**Atajo:** la tecla `N` (o el botón «+») captura una idea desde cualquier pantalla, también dictada.
+
 ## Lo que viene
 
-- **Contenido orgánico**: tracker de piezas publicadas y leads atribuidos.
 - **Meta Ads automático**: una función programada en Supabase que cada mañana lee la API de Meta y escribe una fila por cuenta y día en `pauta` (el índice `pauta_meta_unica` ya está listo).
 - **GoHighLevel**: citas y asistencia de los pacientes de cada clínica.
 - **Capa de conocimiento**: conectar cada cuello de botella con su módulo de Imperium.

@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, format, parseISO, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ArrowRight, BookOpen, Brain, CalendarCheck, Check as CheckIcon, ClipboardList, Flame, Megaphone, Moon, Stethoscope, Sun, TrendingUp, Video } from 'lucide-react'
+import { ArrowRight, BarChart3, BookOpen, Brain, CalendarCheck, Check as CheckIcon, Clapperboard, ClipboardList, Flame, ListChecks, Megaphone, MessageCircle, Moon, Stethoscope, Sun, Timer, TrendingUp, Video } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardHead, cx, Kpi, Pagina, tonoClase } from '../components/ui'
@@ -11,6 +11,7 @@ import { enRango, evaluar, evaluarU, ltv as calcLtv, pauta as calcPauta, rangoUl
 import { indiceDelDia, lecturaCompleta, useSemana2 } from '../lib/semana2'
 import { useAjustes, useTabla } from '../lib/store'
 import { useProyeccion } from './Proyeccion'
+import { tocaMedir } from '../lib/contenido'
 import { revisionPendiente } from './Semana'
 
 interface Tarea {
@@ -31,6 +32,12 @@ export default function Hoy() {
   const movs = useTabla('movimientos')
   const dias = useTabla('dias')
   const revisiones = useTabla('revisiones')
+  const prioridades = useTabla('prioridades')
+  const sesiones = useTabla('sesiones')
+  const personas = useTabla('personas')
+  const piezas = useTabla('piezas')
+  const metricas = useTabla('metricas_pieza')
+  const ideas = useTabla('ideas')
   const ajustes = useAjustes()
   const s2 = useSemana2()
   const proy = useProyeccion()
@@ -54,6 +61,18 @@ export default function Hoy() {
 
   // ── El plan del día ──
   const tareas: Tarea[] = []
+  const misPrioridades = prioridades.filter((p) => p.fecha === hoy).sort((x, y) => x.orden - y.orden)
+  const focoHoy = sesiones.filter((x) => x.fecha === hoy).reduce((a, x) => a + x.minutos, 0)
+  if (!misPrioridades.length) tareas.push({ id: 'prioridades', icono: <ListChecks size={16} />, titulo: 'Define tus 3 prioridades de hoy', detalle: 'El inventario de productividad: tres cosas, no diez.', a: '/foco', urgente: hora < 12 })
+  else
+    misPrioridades.forEach((p, i) => tareas.push({ id: `p-${p.id}`, icono: <span className="num text-xs font-semibold">{i + 1}</span>, titulo: p.texto, detalle: 'Prioridad de hoy · ▶ enfócate en ella desde Foco', a: '/foco', hecho: p.hecha }))
+  const pendientesPersonas = personas.filter((x) => x.siguiente_fecha && x.siguiente_fecha <= hoy && x.etapa !== 'cliente' && x.etapa !== 'descartado')
+  if (pendientesPersonas.length) tareas.push({ id: 'personas', icono: <MessageCircle size={16} />, titulo: `Responder a ${pendientesPersonas.length} ${pendientesPersonas.length === 1 ? 'persona' : 'personas'} que te escribieron`, detalle: pendientesPersonas.map((x) => x.nombre).join(', '), a: '/contenido', urgente: true })
+  const porMedir = piezas.filter((p) => tocaMedir(p, metricas)).length
+  if (porMedir) tareas.push({ id: 'medir', icono: <BarChart3 size={16} />, titulo: `Medir ${porMedir} ${porMedir === 1 ? 'pieza' : 'piezas'} (ya pasaron 7 días)`, detalle: 'Una vez, a los 7 días, por plataforma.', a: '/contenido' })
+  const listas = ideas.filter((x) => x.etapa === 'listo').length
+  if (listas) tareas.push({ id: 'publicar', icono: <Clapperboard size={16} />, titulo: `${listas} ${listas === 1 ? 'pieza lista' : 'piezas listas'} para publicar`, detalle: 'Súbela y suéltala en Publicar.', a: '/contenido' })
+  if (hora >= 18 && !dias.find((d) => d.fecha === hoy)?.cierre) tareas.push({ id: 'cierre', icono: <Timer size={16} />, titulo: 'Cerrar el día y elegir las 3 de mañana', detalle: 'Horas, foco, output y cómo mejorar.', a: '/foco' })
   const turno = hora < 15 ? 'lectura_am' : 'lectura_pm'
   if (s2.doctrina)
     tareas.push({
@@ -151,7 +170,8 @@ export default function Hoy() {
 
       <RitualHoy />
 
-      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+        <Kpi etiqueta="Foco hoy" valor={`${fmt.dec(focoHoy / 60)} h`} sub="la ventana de Imperium: 2 h" tono={focoHoy >= 120 ? 'ok' : 'nada'} />
         <Kpi etiqueta="Pauta · 7 días" valor={fmt.copCorto(m7.gasto)} sub={`${fmt.copCorto(m7.gasto / diasEfectivos(propia.filter((x) => enRango(x.fecha, r7)).map((x) => x.fecha), r7))}/día`} />
         <Kpi etiqueta="Leads · 7 días" valor={fmt.n(m7.leads)} sub={`CPL ${fmt.copCorto(m7.cpl)}`} />
         <Kpi etiqueta="Llamadas · 7 días" valor={fmt.n(m7.citas)} sub={`${fmt.copCorto(m7.cpCita)} c/u`} />

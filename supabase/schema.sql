@@ -267,11 +267,117 @@ create table if not exists ajustes (
 );
 alter table ajustes add column if not exists presupuesto_diario numeric default 0;
 
+alter table dias add column if not exists cierre jsonb;
+
+-- Contenido, foco y War Map
+create table if not exists ideas (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  linea text not null default 'marca',
+  titulo text not null default '',
+  gancho text default '',
+  formato text default '',
+  embudo text default 'TOF',
+  framework text default '',
+  pilar text default '',
+  guion text default '',
+  notas text default '',
+  etapa text not null default 'idea',
+  posicion numeric default 0,
+  estrella boolean default false,
+  filtro jsonb default '[]'::jsonb
+);
+
+create table if not exists piezas (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  idea_id text,
+  linea text not null default 'marca',
+  titulo text not null default '',
+  gancho text default '',
+  formato text default '',
+  embudo text default 'TOF',
+  framework text default '',
+  plataformas jsonb default '[]'::jsonb,
+  url text default '',
+  publicado date not null,
+  notas text default ''
+);
+
+create table if not exists metricas_pieza (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  pieza_id text not null,
+  plataforma text not null,
+  medido date,
+  vistas numeric default 0,
+  retencion numeric default 0,
+  likes numeric default 0,
+  comentarios numeric default 0,
+  compartidos numeric default 0,
+  guardados numeric default 0,
+  seguidores numeric default 0,
+  visitas_perfil numeric default 0
+);
+
+create table if not exists personas (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  nombre text not null default '',
+  usuario text default '',
+  plataforma text default 'Instagram',
+  pieza_id text,
+  linea text default 'marca',
+  disparador text default '',
+  etapa text default 'conversando',
+  siguiente_paso text default '',
+  siguiente_fecha date,
+  notas text default ''
+);
+
+create table if not exists sesiones (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  fecha date not null,
+  inicio timestamptz not null,
+  fin timestamptz not null,
+  minutos numeric not null default 0,
+  objetivo_min numeric,
+  modo text default 'temporizador',
+  tarea text default '',
+  prioridad_id text,
+  tipo text default 'crear',
+  calidad numeric,
+  interrupciones jsonb default '[]'::jsonb
+);
+
+create table if not exists prioridades (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  fecha date not null,
+  texto text not null default '',
+  hecha boolean default false,
+  orden numeric default 0
+);
+
+create table if not exists warmap (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  datos jsonb not null default '{}'::jsonb
+);
+
 -- Row Level Security: cada fila es solo de quien la creó.
 do $$
 declare t text;
 begin
-  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes','banco','contenido','mentalidad','anuncios','revisiones']
+  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes','banco','contenido','mentalidad','anuncios','revisiones','ideas','piezas','metricas_pieza','personas','sesiones','prioridades','warmap']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "dueno" on %I', t);

@@ -3,12 +3,16 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { Layout } from './components/Layout'
 import { Avisos } from './components/ui'
+import { Captura } from './components/Captura'
 import { cargar, useEstado } from './lib/store'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 const Hoy = lazy(() => import('./pages/Hoy'))
 const Llamar = lazy(() => import('./pages/Llamar'))
 const Mentalidad = lazy(() => import('./pages/Mentalidad'))
+const Contenido = lazy(() => import('./pages/Contenido'))
+const Foco = lazy(() => import('./pages/Foco'))
+const WarMap = lazy(() => import('./pages/WarMap'))
 const Prospectos = lazy(() => import('./pages/Prospectos'))
 const Outreach = lazy(() => import('./pages/Outreach'))
 const Ventas = lazy(() => import('./pages/Ventas'))
@@ -54,6 +58,9 @@ function Aplicacion() {
           <Route path="/" element={<Hoy />} />
           <Route path="/llamar" element={<Llamar />} />
           <Route path="/mentalidad" element={<Mentalidad />} />
+          <Route path="/contenido" element={<Contenido />} />
+          <Route path="/foco" element={<Foco />} />
+          <Route path="/warmap" element={<WarMap />} />
           <Route path="/prospectos" element={<Prospectos />} />
           <Route path="/outreach" element={<Outreach />} />
           <Route path="/ventas" element={<Ventas />} />
@@ -73,6 +80,7 @@ function Aplicacion() {
         </Routes>
         </Suspense>
       </Layout>
+      <Captura />
       <Avisos />
     </BrowserRouter>
   )

@@ -202,6 +202,118 @@ export interface Dia extends Row {
   energia: number | null // 1-5
   nota: string
   ritual: Record<string, boolean> | null // checklist del ritual y los 10 mandatos (Semana 2)
+  cierre: CierreDia | null // el Daily Planner de Imperium
+}
+
+/** El cierre del día del Daily Planner: horas, foco, output y tres mejoras. */
+export interface CierreDia {
+  horas: number | null
+  foco: number | null // 1-10
+  output: string
+  mejoras: string[]
+}
+
+// ── Contenido ──────────────────────────────────────────────────────────
+
+/** Para qué es la pieza: tu marca personal, el contenido de la agencia o un creativo de pauta. */
+export type Linea = 'marca' | 'agencia' | 'ads'
+export type Embudo = 'TOF' | 'MOF' | 'BOF'
+export type EtapaIdea = 'idea' | 'grabar' | 'editar' | 'listo' | 'publicado' | 'archivado'
+
+export interface Idea extends Row {
+  linea: Linea
+  titulo: string
+  gancho: string
+  formato: string
+  embudo: Embudo
+  framework: string // slug del framework o generador que la produjo
+  pilar: string
+  guion: string
+  notas: string
+  etapa: EtapaIdea
+  posicion: number
+  estrella: boolean
+  filtro: string[] // criterios del filtro de ideas que cumple
+}
+
+export interface Pieza extends Row {
+  idea_id: ID | null
+  linea: Linea
+  titulo: string
+  gancho: string
+  formato: string
+  embudo: Embudo
+  framework: string
+  plataformas: string[]
+  url: string
+  publicado: string // YYYY-MM-DD
+  notas: string
+}
+
+/** Se mide una vez, a los 7 días, por plataforma. */
+export interface MetricaPieza extends Row {
+  pieza_id: ID
+  plataforma: string
+  medido: string
+  vistas: number
+  retencion: number // % promedio visto
+  likes: number
+  comentarios: number
+  compartidos: number
+  guardados: number
+  seguidores: number
+  visitas_perfil: number
+}
+
+/** Quien te escribió por un contenido: la parte CRM de la audiencia. */
+export type EtapaPersona = 'conversando' | 'interesado' | 'cita' | 'cliente' | 'descartado'
+export interface Persona extends Row {
+  nombre: string
+  usuario: string
+  plataforma: string
+  pieza_id: ID | null
+  linea: Linea
+  disparador: string // qué le hizo escribir, en sus palabras
+  etapa: EtapaPersona
+  siguiente_paso: string
+  siguiente_fecha: string | null
+  notas: string
+}
+
+// ── Foco ───────────────────────────────────────────────────────────────
+
+export interface Interrupcion {
+  inicio: string
+  fin: string | null
+  motivo: string
+}
+
+export interface Sesion extends Row {
+  fecha: string // día local
+  inicio: string // ISO
+  fin: string // ISO
+  minutos: number // trabajo real, sin interrupciones
+  objetivo_min: number | null
+  modo: 'temporizador' | 'contador'
+  tarea: string
+  prioridad_id: ID | null
+  tipo: 'crear' | 'aprender' | 'vaciar'
+  calidad: number | null
+  interrupciones: Interrupcion[]
+}
+
+export interface PrioridadDia extends Row {
+  fecha: string
+  texto: string
+  hecha: boolean
+  orden: number
+}
+
+// ── War Map ────────────────────────────────────────────────────────────
+
+/** id 'reglas-AAAA' → datos.reglas: string[] · id 'mes-AAAA-MM' → datos.objetivos, datos.notas */
+export interface WarMap extends Row {
+  datos: Record<string, unknown>
 }
 
 // ── Mentalidad (Semana 2) ──────────────────────────────────────────────
@@ -287,6 +399,13 @@ export interface Tablas {
   mentalidad: Mentalidad
   anuncios: Anuncio
   revisiones: Revision
+  ideas: Idea
+  piezas: Pieza
+  metricas_pieza: MetricaPieza
+  personas: Persona
+  sesiones: Sesion
+  prioridades: PrioridadDia
+  warmap: WarMap
 }
 
 export type Tabla = keyof Tablas
@@ -309,4 +428,11 @@ export const TABLAS: Tabla[] = [
   'mentalidad',
   'anuncios',
   'revisiones',
+  'ideas',
+  'piezas',
+  'metricas_pieza',
+  'personas',
+  'sesiones',
+  'prioridades',
+  'warmap',
 ]

@@ -20,6 +20,9 @@ import {
   Handshake,
   MoreHorizontal,
   TrendingUp,
+  Timer,
+  Clapperboard,
+  Map as MapIcon,
   CalendarCheck,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -32,8 +35,20 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
     grupo: 'Operar',
     items: [
       { a: '/', nombre: 'Hoy', icono: <LayoutGrid size={17} /> },
+      { a: '/foco', nombre: 'Foco', icono: <Timer size={17} /> },
       { a: '/mentalidad', nombre: 'Mentalidad', icono: <Brain size={17} /> },
+    ],
+  },
+  {
+    grupo: 'Adquisición',
+    items: [
       { a: '/ads', nombre: 'Ads', icono: <Megaphone size={17} /> },
+      { a: '/contenido', nombre: 'Contenido', icono: <Clapperboard size={17} /> },
+    ],
+  },
+  {
+    grupo: 'Ventas',
+    items: [
       { a: '/ventas', nombre: 'Ventas', icono: <Handshake size={17} /> },
       { a: '/clientes', nombre: 'Clientes', icono: <Target size={17} /> },
     ],
@@ -43,9 +58,9 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
     items: [
       { a: '/proyeccion', nombre: 'Proyección', icono: <TrendingUp size={17} /> },
       { a: '/semana', nombre: 'Revisión semanal', icono: <CalendarCheck size={17} /> },
+      { a: '/warmap', nombre: 'War Map', icono: <MapIcon size={17} /> },
       { a: '/diagnostico', nombre: 'Cuello de botella', icono: <Stethoscope size={17} /> },
       { a: '/finanzas', nombre: 'Finanzas', icono: <Wallet size={17} /> },
-      { a: '/tiempo', nombre: 'Tiempo', icono: <Clock size={17} /> },
       { a: '/calculadoras', nombre: 'Calculadoras', icono: <Calculator size={17} /> },
     ],
   },
@@ -54,6 +69,7 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
     items: [
       { a: '/boveda', nombre: 'Bóveda', icono: <BookOpen size={17} /> },
       { a: '/equipo', nombre: 'Equipo', icono: <UserPlus size={17} /> },
+      { a: '/tiempo', nombre: 'Tiempo', icono: <Clock size={17} /> },
       { a: '/ajustes', nombre: 'Ajustes', icono: <Settings size={17} /> },
     ],
   },
@@ -67,7 +83,7 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
   },
 ]
 
-const MOVIL = ['/', '/mentalidad', '/ads', '/proyeccion']
+const MOVIL = ['/', '/foco', '/contenido', '/ads']
 
 function useTema() {
   const [tema, setTema] = useState<'dark' | 'light'>(() => {
