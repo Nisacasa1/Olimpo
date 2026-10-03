@@ -4,6 +4,7 @@ import { SelectorPeriodo, usePeriodo } from '../components/Periodo'
 import { Area, Badge, Btn, Campo, Card, CardHead, cx, Input, Kpi, Modal, Num, Pagina, Pill, Select, Tabla, td, th, Vacio } from '../components/ui'
 import { U } from '../lib/doctrina'
 import { fmt, hoyISO } from '../lib/format'
+import { calendario, descargarIcs } from '../lib/ics'
 import { enRango, evaluarU, ventas } from '../lib/metricas'
 import { actualizar, avisar, borrar, insertar, useAjustes, useTabla } from '../lib/store'
 import type { EstadoReunion, Reunion, ResultadoVenta } from '../lib/types'
@@ -26,7 +27,7 @@ const nueva = (): Partial<Reunion> => ({
   nombre: '',
   fecha: new Date(Date.now() + 86400000).toISOString(),
   agendada_el: hoyISO(),
-  fuente: 'Llamada en frío',
+  fuente: 'Pauta',
   estado: 'agendada',
   resultado: null,
   oferta: '',
@@ -222,6 +223,18 @@ function EditarReunion({ r: inicial, onCerrar }: { r: Partial<Reunion>; onCerrar
               Guardar y crear cliente
             </Btn>
           )}
+          {r.estado === 'agendada' && r.fecha && (
+            <Btn
+              onClick={() =>
+                descargarIcs(
+                  `cita-${(r.nombre ?? 'olimpo').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.ics`,
+                  calendario([{ uid: `cita-${r.id ?? Date.now()}`, titulo: `📞 Videollamada · ${r.nombre}`, descripcion: `Fuente: ${r.fuente}. Confirma por WhatsApp la noche anterior. ${r.notas ?? ''}`, inicio: new Date(r.fecha!), minutos: 60, alarmaMin: 60 }]),
+                )
+              }
+            >
+              Al calendario
+            </Btn>
+          )}
           <Btn variante="primario" onClick={guardar} disabled={!r.nombre}>
             Guardar
           </Btn>
@@ -240,7 +253,7 @@ function EditarReunion({ r: inicial, onCerrar }: { r: Partial<Reunion>; onCerrar
         </Campo>
         <Campo etiqueta="Fuente">
           <Select value={r.fuente} onChange={(e) => set({ fuente: e.target.value })}>
-            {['Llamada en frío', 'Pauta', 'WhatsApp', 'Referido', 'Orgánico', 'Red propia'].map((f) => (
+            {['Pauta', 'Orgánico', 'Referido', 'WhatsApp', 'Red propia', 'Llamada en frío'].map((f) => (
               <option key={f}>{f}</option>
             ))}
           </Select>

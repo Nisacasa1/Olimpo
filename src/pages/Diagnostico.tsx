@@ -1,19 +1,51 @@
 import { ArrowDown, Stethoscope } from 'lucide-react'
 import { SelectorPeriodo, usePeriodo } from '../components/Periodo'
-import { Barra, Card, cx, Pagina, Pill, tonoClase } from '../components/ui'
+import { useMemo, useState } from 'react'
+import { Barra, Card, cx, Pagina, Pill, Segmento, tonoClase } from '../components/ui'
+import { diagnosticarAds, diasEfectivos } from '../lib/ads'
 import type { Hallazgo } from '../lib/diagnostico'
+import { enRango, ltv as calcLtv, pauta as calcPauta } from '../lib/metricas'
+import { useAjustes, useTabla } from '../lib/store'
 import { useResumen } from '../lib/useResumen'
 
 export default function Diagnostico() {
   const { p, setP, rango } = usePeriodo('30')
-  const { d } = useResumen(rango)
+  const [canal, setCanal] = useState<'pauta' | 'llamadas'>('pauta')
+  const { d: dLlamadas } = useResumen(rango)
+  const pautaT = useTabla('pauta')
+  const clientes = useTabla('clientes')
+  const movs = useTabla('movimientos')
+  const ajustes = useAjustes()
+  const dPauta = useMemo(() => {
+    const filas = pautaT.filter((x) => x.cuenta === 'olimpo' && enRango(x.fecha, rango))
+    const m = calcPauta(filas)
+    const dias = diasEfectivos(filas.map((x) => x.fecha), rango)
+    return diagnosticarAds(m, ajustes, calcLtv(clientes, movs, ajustes).valor, dias)
+  }, [pautaT, clientes, movs, ajustes, rango])
+  const d = canal === 'pauta' ? dPauta : dLlamadas
   const cuello = d.cuello
 
   return (
     <Pagina
       titulo="Cuello de botella"
-      sub="El árbol de los Big 4: se baja desde la métrica llave hasta encontrar el tubo roto, en orden de dependencia — ABR, SUR, SCR, LTV — y sin juzgar nada que no tenga muestra."
-      acciones={<SelectorPeriodo valor={p} onChange={setP} sinHoy />}
+      sub={
+        canal === 'pauta'
+          ? 'El embudo de la pauta en orden — gasto, anuncio, página, lead, agenda, presentación, cierre, retorno — sin juzgar ningún tubo sin su muestra mínima.'
+          : 'El árbol de los Big 4 de la llamada en frío (archivado): ABR, SUR, SCR, LTV.'
+      }
+      acciones={
+        <>
+          <Segmento
+            valor={canal}
+            onChange={setCanal}
+            opciones={[
+              { valor: 'pauta', etiqueta: 'Pauta' },
+              { valor: 'llamadas', etiqueta: 'Llamadas (archivo)' },
+            ]}
+          />
+          <SelectorPeriodo valor={p} onChange={setP} sinHoy />
+        </>
+      }
     >
       <Card className={cx('relative mb-6 overflow-hidden p-6 md:p-8', cuello && tonoClase[cuello.tono].bg)}>
         <div className="flex items-start gap-4">
@@ -55,7 +87,9 @@ export default function Diagnostico() {
           </div>
         ))}
         <p className="mt-6 text-center text-xs text-faint">
-          «Si te preguntas en qué enfocarte primero, siempre va a ser el ABR.» El SUR no se mejora sin citas, ni el SCR sin llamadas para practicar.
+          {canal === 'pauta'
+            ? '«Nadie sabe qué funciona en Facebook; los mejores solo son muy buenos testeando.» Días 0-3 no se toca nada, y se decide con la calculadora, no con la sensación.'
+            : '«Si te preguntas en qué enfocarte primero, siempre va a ser el ABR.» El SUR no se mejora sin citas, ni el SCR sin llamadas para practicar.'}
         </p>
       </div>
     </Pagina>

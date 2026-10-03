@@ -4,14 +4,14 @@ La app de métricas de Imperium Academy para **Olimpo Acquisition**. Reemplaza l
 
 | Pantalla | Reemplaza a |
 |---|---|
-| **Hoy** | — el tablero del día: outreach, callbacks, citas, Big 4, cuello de botella y el ritual |
+| **Hoy** | — el plan del día (qué hacer ahora, en orden), la proyección del mes, el cuello de botella y el ritual |
 | **Mentalidad** | toda la Semana 2: ritual diario, los 10 mandatos, el Banco de Sufrimiento, tu Self Transcendence Doc, los 8 módulos, los ejercicios y las 30 formas de resistencia |
-| **Llamar** | la hoja de Leads (cola con la regla de 3 intentos y los 7 resultados) |
-| **Prospectos** | Cold Calling Leads · Example CRM · 100 Dial Challenge · importa tus Excel de leads |
+| **Ads** | Ads & Funnel Tracking Sheet, por anuncio: plan de 30 días, calculadora por gasto, ganchos y audiencias, e importación del Excel de Meta Ads Manager |
+| **Proyección** | — a este ritmo, a cuánto llegas, y qué falta (clientes → llamadas → leads → pauta) |
+| **Revisión semanal** | — se arma sola cada viernes; tú pones la reflexión y una sola prioridad |
+| *Archivo · llamadas* | Llamar · Prospectos · Outreach (la llamada en frío, archivada con sus datos) |
 | **Ventas** | Sales Performance Tracker · No Show & Bad Calls |
 | **Clientes** | — cobro semanal por paciente agendado, LTV real |
-| **Outreach** | Cold Call Metrics · Example Agency Metrics · 60 Day Research · 90 Day Attack Plan |
-| **Pauta** | Ads & Funnel Tracking Sheet (28 columnas) + la escalera de 15 diagnósticos |
 | **Finanzas** | Imperium Academy Financial Tracker (4 hojas) + cofre de guerra |
 | **Tiempo** | 100 Units of Time · Task Logging Sheet |
 | **Cuello de botella** | el árbol de los Big 4 y la identificación de cuellos de botella (7.1, 7.2) |
@@ -51,6 +51,7 @@ Lee `privado/doctrina-semana-2.json` (los resúmenes de los módulos), tu PDF de
 
 ## Lo que viene
 
+- **Contenido orgánico**: tracker de piezas publicadas y leads atribuidos.
 - **Meta Ads automático**: una función programada en Supabase que cada mañana lee la API de Meta y escribe una fila por cuenta y día en `pauta` (el índice `pauta_meta_unica` ya está listo).
 - **GoHighLevel**: citas y asistencia de los pacientes de cada clínica.
 - **Capa de conocimiento**: conectar cada cuello de botella con su módulo de Imperium.

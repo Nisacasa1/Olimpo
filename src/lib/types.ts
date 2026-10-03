@@ -105,6 +105,7 @@ export interface Cliente extends Row {
 /** Una fila por día y por cuenta. cuenta = 'olimpo' o el id de un cliente. */
 export interface PautaDia extends Row {
   cuenta: string
+  anuncio_id: ID | null // null = total de la cuenta (o lo que no se atribuye a un anuncio)
   fecha: string
   gasto: number
   impresiones: number
@@ -118,6 +119,33 @@ export interface PautaDia extends Row {
   valor: number // LTV atribuido a los cierres del día
   nota: string
   origen: 'manual' | 'meta'
+}
+
+/** Un anuncio de la campaña (Paid Ads System: 1 campaña · 3 adsets · 4 ganchos + 1 cuerpo). */
+export type EstadoAnuncio = 'activo' | 'pausado' | 'apagado' | 'ganador'
+export interface Anuncio extends Row {
+  cuenta: string
+  campana: string
+  conjunto: string // adset
+  audiencia: string // lookalike · intereses · cálidas · broad
+  nombre: string
+  tipo: 'video' | 'estatico'
+  gancho: string
+  angulo: string
+  lanzado: string // YYYY-MM-DD
+  estado: EstadoAnuncio
+  notas: string
+}
+
+// ── Revisión semanal ───────────────────────────────────────────────────
+
+export interface Revision extends Row {
+  semana: string // YYYY-Www
+  funciono: string
+  no_funciono: string
+  prioridad: string
+  aprendizaje: string
+  cerrada: boolean
 }
 
 // ── Finanzas ───────────────────────────────────────────────────────────
@@ -235,6 +263,7 @@ export interface Ajustes extends Row {
   meta_llamadas_dia: number
   dias_habiles_semana: number
   guion_activo: string
+  presupuesto_diario: number // pauta propia, COP/día
   cpl_objetivo: number // KPI1 de la calculadora por gasto (Paid Ads 7.1)
   costo_cita_objetivo: number // KPI2
 }
@@ -256,6 +285,8 @@ export interface Tablas {
   banco: MovBanco
   contenido: Contenido
   mentalidad: Mentalidad
+  anuncios: Anuncio
+  revisiones: Revision
 }
 
 export type Tabla = keyof Tablas
@@ -276,4 +307,6 @@ export const TABLAS: Tabla[] = [
   'banco',
   'contenido',
   'mentalidad',
+  'anuncios',
+  'revisiones',
 ]

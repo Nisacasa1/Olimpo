@@ -180,6 +180,7 @@ export const AJUSTES_BASE: Ajustes = {
   meta_llamadas_dia: 100,
   dias_habiles_semana: 5,
   guion_activo: 'charlie',
+  presupuesto_diario: 0,
   cpl_objetivo: 0,
   costo_cita_objetivo: 0,
 }

@@ -86,6 +86,7 @@ create table if not exists pauta (
   created_at timestamptz default now(),
   user_id uuid not null default auth.uid() references auth.users on delete cascade,
   cuenta text not null,           -- 'olimpo' o el id de un cliente
+  anuncio_id text,                -- null = total de la cuenta
   fecha date not null,
   gasto numeric default 0,
   impresiones numeric default 0,
@@ -101,7 +102,37 @@ create table if not exists pauta (
   origen text not null default 'manual'  -- 'manual' | 'meta'
 );
 -- La futura sincronización con Meta escribe una fila por cuenta y día.
-create unique index if not exists pauta_meta_unica on pauta (user_id, cuenta, fecha) where origen = 'meta';
+alter table pauta add column if not exists anuncio_id text;
+create unique index if not exists pauta_meta_unica on pauta (user_id, cuenta, coalesce(anuncio_id, ''), fecha) where origen = 'meta';
+
+create table if not exists anuncios (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  cuenta text not null default 'olimpo',
+  campana text default '',
+  conjunto text default '',
+  audiencia text default '',
+  nombre text not null default '',
+  tipo text default 'video',
+  gancho text default '',
+  angulo text default '',
+  lanzado date,
+  estado text default 'activo',
+  notas text default ''
+);
+
+create table if not exists revisiones (
+  id text primary key,
+  created_at timestamptz default now(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  semana text not null,
+  funciono text default '',
+  no_funciono text default '',
+  prioridad text default '',
+  aprendizaje text default '',
+  cerrada boolean default false
+);
 
 create table if not exists movimientos (
   id text primary key,
@@ -231,14 +262,16 @@ create table if not exists ajustes (
   dias_habiles_semana numeric default 5,
   guion_activo text default 'charlie',
   cpl_objetivo numeric default 0,
-  costo_cita_objetivo numeric default 0
+  costo_cita_objetivo numeric default 0,
+  presupuesto_diario numeric default 0
 );
+alter table ajustes add column if not exists presupuesto_diario numeric default 0;
 
 -- Row Level Security: cada fila es solo de quien la creó.
 do $$
 declare t text;
 begin
-  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes','banco','contenido','mentalidad']
+  foreach t in array array['leads','llamadas','reuniones','clientes','pauta','movimientos','presupuestos','bloques','tareas','dias','boveda','candidatos','ajustes','banco','contenido','mentalidad','anuncios','revisiones']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "dueno" on %I', t);

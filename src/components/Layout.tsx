@@ -19,6 +19,8 @@ import {
   Wallet,
   Handshake,
   MoreHorizontal,
+  TrendingUp,
+  CalendarCheck,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
@@ -31,25 +33,19 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
     items: [
       { a: '/', nombre: 'Hoy', icono: <LayoutGrid size={17} /> },
       { a: '/mentalidad', nombre: 'Mentalidad', icono: <Brain size={17} /> },
-      { a: '/llamar', nombre: 'Llamar', icono: <PhoneCall size={17} /> },
-      { a: '/prospectos', nombre: 'Prospectos', icono: <Users size={17} /> },
+      { a: '/ads', nombre: 'Ads', icono: <Megaphone size={17} /> },
       { a: '/ventas', nombre: 'Ventas', icono: <Handshake size={17} /> },
       { a: '/clientes', nombre: 'Clientes', icono: <Target size={17} /> },
     ],
   },
   {
-    grupo: 'Medir',
+    grupo: 'Números',
     items: [
-      { a: '/outreach', nombre: 'Outreach', icono: <Phone size={17} /> },
-      { a: '/pauta', nombre: 'Pauta', icono: <Megaphone size={17} /> },
+      { a: '/proyeccion', nombre: 'Proyección', icono: <TrendingUp size={17} /> },
+      { a: '/semana', nombre: 'Revisión semanal', icono: <CalendarCheck size={17} /> },
+      { a: '/diagnostico', nombre: 'Cuello de botella', icono: <Stethoscope size={17} /> },
       { a: '/finanzas', nombre: 'Finanzas', icono: <Wallet size={17} /> },
       { a: '/tiempo', nombre: 'Tiempo', icono: <Clock size={17} /> },
-    ],
-  },
-  {
-    grupo: 'Analizar',
-    items: [
-      { a: '/diagnostico', nombre: 'Cuello de botella', icono: <Stethoscope size={17} /> },
       { a: '/calculadoras', nombre: 'Calculadoras', icono: <Calculator size={17} /> },
     ],
   },
@@ -61,9 +57,17 @@ export const NAV: { grupo: string; items: { a: string; nombre: string; icono: Re
       { a: '/ajustes', nombre: 'Ajustes', icono: <Settings size={17} /> },
     ],
   },
+  {
+    grupo: 'Archivo · llamadas',
+    items: [
+      { a: '/llamar', nombre: 'Llamar', icono: <PhoneCall size={17} /> },
+      { a: '/prospectos', nombre: 'Prospectos', icono: <Users size={17} /> },
+      { a: '/outreach', nombre: 'Outreach', icono: <Phone size={17} /> },
+    ],
+  },
 ]
 
-const MOVIL = ['/', '/llamar', '/prospectos', '/diagnostico']
+const MOVIL = ['/', '/mentalidad', '/ads', '/proyeccion']
 
 function useTema() {
   const [tema, setTema] = useState<'dark' | 'light'>(() => {
@@ -123,12 +127,21 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-5 overflow-y-auto">
-          {NAV.map((g) => (
-            <div key={g.grupo}>
-              <div className="mb-1.5 px-3 text-[10.5px] font-semibold tracking-[0.14em] text-faint uppercase">{g.grupo}</div>
-              <div className="space-y-0.5">{g.items.map(link)}</div>
-            </div>
-          ))}
+          {NAV.map((g) =>
+            g.grupo.startsWith('Archivo') ? (
+              <details key={g.grupo} className="group/arch" open={g.items.some((i) => loc.pathname === i.a)}>
+                <summary className="mb-1.5 flex cursor-pointer list-none items-center gap-1 px-3 text-[10.5px] font-semibold tracking-[0.14em] text-faint uppercase hover:text-muted">
+                  <span className="transition group-open/arch:rotate-90">›</span> {g.grupo}
+                </summary>
+                <div className="space-y-0.5 opacity-80">{g.items.map(link)}</div>
+              </details>
+            ) : (
+              <div key={g.grupo}>
+                <div className="mb-1.5 px-3 text-[10.5px] font-semibold tracking-[0.14em] text-faint uppercase">{g.grupo}</div>
+                <div className="space-y-0.5">{g.items.map(link)}</div>
+              </div>
+            ),
+          )}
         </nav>
         <div className="mt-4 flex items-center justify-between gap-2 border-t border-line px-2 pt-4">
           <div className="flex items-center gap-1.5 text-[11px] text-faint" title={backend === 'local' ? 'Los datos viven en este navegador' : 'Los datos viven en la nube'}>
@@ -156,7 +169,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 className={({ isActive }) => cx('flex flex-col items-center gap-1 rounded-xl py-1.5 text-[10.5px] font-medium', isActive ? 'text-blue-2' : 'text-faint')}
               >
                 {it.icono}
-                {it.nombre === 'Cuello de botella' ? 'Cuello' : it.nombre}
+                {it.nombre === 'Cuello de botella' ? 'Cuello' : it.nombre === 'Mentalidad' ? 'Mente' : it.nombre}
               </NavLink>
             ))}
           <button onClick={() => setMas(true)} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[10.5px] font-medium text-faint">

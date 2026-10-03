@@ -13,7 +13,9 @@ const Prospectos = lazy(() => import('./pages/Prospectos'))
 const Outreach = lazy(() => import('./pages/Outreach'))
 const Ventas = lazy(() => import('./pages/Ventas'))
 const Clientes = lazy(() => import('./pages/Clientes'))
-const Pauta = lazy(() => import('./pages/Pauta'))
+const Ads = lazy(() => import('./pages/Ads'))
+const Proyeccion = lazy(() => import('./pages/Proyeccion'))
+const Semana = lazy(() => import('./pages/Semana'))
 const Finanzas = lazy(() => import('./pages/Finanzas'))
 const Tiempo = lazy(() => import('./pages/Tiempo'))
 const Diagnostico = lazy(() => import('./pages/Diagnostico'))
@@ -56,7 +58,10 @@ function Aplicacion() {
           <Route path="/outreach" element={<Outreach />} />
           <Route path="/ventas" element={<Ventas />} />
           <Route path="/clientes" element={<Clientes />} />
-          <Route path="/pauta" element={<Pauta />} />
+          <Route path="/ads" element={<Ads />} />
+          <Route path="/pauta" element={<Ads />} />
+          <Route path="/proyeccion" element={<Proyeccion />} />
+          <Route path="/semana" element={<Semana />} />
           <Route path="/finanzas" element={<Finanzas />} />
           <Route path="/tiempo" element={<Tiempo />} />
           <Route path="/diagnostico" element={<Diagnostico />} />

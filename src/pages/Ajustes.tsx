@@ -1,5 +1,6 @@
 import { CloudUpload, Download, HardDrive, Cloud, Upload } from 'lucide-react'
 import { useRef } from 'react'
+import { Recordatorios } from '../components/Recordatorios'
 import { Btn, Campo, Card, CardHead, Input, Num, Pagina } from '../components/ui'
 import { fmt, hoyISO } from '../lib/format'
 import { ltvEstimado } from '../lib/metricas'
@@ -16,7 +17,7 @@ export default function AjustesPage() {
     const url = URL.createObjectURL(blob)
     const el = document.createElement('a')
     el.href = url
-    el.download = `imperium-os-respaldo-${hoyISO()}.json`
+    el.download = `olimpo-respaldo-${hoyISO()}.json`
     el.click()
     URL.revokeObjectURL(url)
   }
@@ -86,13 +87,16 @@ export default function AjustesPage() {
         </Card>
 
         <Card>
-          <CardHead titulo="Ritmo y pauta" />
+          <CardHead titulo="Pauta y ritmo" />
           <div className="grid grid-cols-2 gap-3 px-5 pb-5">
-            <Campo etiqueta="Meta de llamadas por día" ayuda="100 marcadas = la sesión con piso del bonus">
+            <Campo etiqueta="Meta de llamadas en frío por día" ayuda="Archivado: solo cuenta si vuelves a llamar">
               <Num value={a.meta_llamadas_dia} onChange={(n) => guardarAjustes({ meta_llamadas_dia: n ?? 0 })} />
             </Campo>
             <Campo etiqueta="Días hábiles por semana">
               <Num value={a.dias_habiles_semana} onChange={(n) => guardarAjustes({ dias_habiles_semana: Math.min(7, Math.max(1, n ?? 5)) })} />
+            </Campo>
+            <Campo etiqueta="Presupuesto de pauta por día" ayuda="Tu pauta propia, en COP">
+              <Num value={a.presupuesto_diario} onChange={(n) => guardarAjustes({ presupuesto_diario: n ?? 0 })} />
             </Campo>
             <Campo etiqueta="CPL objetivo (KPI1)" ayuda="En COP. Los USD 25 del curso no transfieren">
               <Num value={a.cpl_objetivo} onChange={(n) => guardarAjustes({ cpl_objetivo: n ?? 0 })} />
@@ -130,6 +134,8 @@ export default function AjustesPage() {
             )}
           </div>
         </Card>
+
+        <Recordatorios />
 
         <Card>
           <CardHead titulo="Respaldo" />
